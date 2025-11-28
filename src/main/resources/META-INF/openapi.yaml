@@ -1,0 +1,363 @@
+﻿openapi: 3.0.3
+info:
+  title: ATM Layer Reporting Service API
+  version: 1.0.0
+  description: API per consultazione, notifica e rendicontazione dei pagamenti PagoPA.
+servers:
+  - url: /
+    description: Default server
+tags:
+  - name: PagopaTransactions
+    description: Operazioni sulle transazioni PagoPA
+  - name: PagopaTransferList
+    description: Operazioni sugli elementi della lista di trasferimento PagoPA
+  - name: CbillAbiFederazione
+    description: Operazioni sulla federazione ABI CBILL
+paths:
+  /pagopa-transactions:
+    get:
+      tags:
+        - PagopaTransactions
+      summary: Lista delle transazioni PagoPA
+      operationId: listPagopaTransactions
+      responses:
+        '200':
+          description: Operazione eseguita con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PagopaTransactions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+        - PagopaTransactions
+      summary: Creazione di una transazione PagoPA
+      operationId: createPagopaTransaction
+      requestBody:
+        $ref: '#/components/requestBodies/PagopaTransaction'
+      responses:
+        '200':
+          description: Transazione persistita
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagopaTransactions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /pagopa-transfer-lists:
+    get:
+      tags:
+        - PagopaTransferList
+      summary: Lista degli elementi di trasferimento
+      operationId: listPagopaTransferLists
+      responses:
+        '200':
+          description: Operazione eseguita con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PagopaTransferList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+        - PagopaTransferList
+      summary: Creazione di un elemento di trasferimento
+      operationId: createPagopaTransferList
+      requestBody:
+        $ref: '#/components/requestBodies/PagopaTransferList'
+      responses:
+        '200':
+          description: Elemento di trasferimento persistito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagopaTransferList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /pagopa-transactions/{transactionId}/transfer-lists:
+    get:
+      tags:
+        - PagopaTransferList
+      summary: Lista di trasferimenti per transazione
+      operationId: listPagopaTransferListsByTransactionId
+      parameters:
+        - $ref: '#/components/parameters/TransactionId'
+      responses:
+        '200':
+          description: Operazione eseguita con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PagopaTransferList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /cbill-abi-federazione:
+    get:
+      tags:
+        - CbillAbiFederazione
+      summary: Lista delle federazioni ABI CBILL
+      operationId: listCbillAbiFederazione
+      responses:
+        '200':
+          description: Operazione eseguita con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CbillAbiFederazione'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /cbill-abi-federazione/{abi}:
+    get:
+      tags:
+        - CbillAbiFederazione
+      summary: Dettaglio federazione ABI CBILL
+      operationId: getCbillAbiFederazioneByAbi
+      parameters:
+        - $ref: '#/components/parameters/Abi'
+      responses:
+        '200':
+          description: Operazione eseguita con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CbillAbiFederazione'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    TransactionId:
+      name: transactionId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    Abi:
+      name: abi
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 5
+  requestBodies:
+    PagopaTransaction:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PagopaTransactions'
+    PagopaTransferList:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PagopaTransferList'
+  responses:
+    BadRequest:
+      description: Richiesta non valida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Risorsa non trovata
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    PagopaTransactions:
+      type: object
+      required:
+        - id
+        - transactionId
+        - status
+        - billAccountId
+        - billAmount
+        - senderBank
+        - payDate
+        - reported
+        - billerIban
+        - billId
+        - billerCommission
+        - bankCommission
+        - idempotencyKey
+        - billerFiscalCode
+        - noticeNumber
+        - retCode
+        - outcomeCode
+        - payDescription
+        - billerName
+        - billerOffice
+        - payToken
+        - tokenExpDt
+        - crdReferenceId
+        - atmCode
+      properties:
+        id:
+          type: integer
+          format: int64
+        transactionId:
+          type: string
+          maxLength: 36
+        status:
+          type: string
+          maxLength: 1
+        billAccountId:
+          type: string
+          maxLength: 36
+        billAmount:
+          type: string
+          format: decimal
+        senderBank:
+          type: string
+          maxLength: 5
+        payDate:
+          type: string
+          format: date-time
+        reported:
+          type: boolean
+        billerIban:
+          type: string
+          maxLength: 27
+        billId:
+          type: string
+          maxLength: 18
+        billerCommission:
+          type: string
+          format: decimal
+        bankCommission:
+          type: string
+          format: decimal
+        idempotencyKey:
+          type: string
+          maxLength: 22
+        billerFiscalCode:
+          type: string
+          maxLength: 11
+        noticeNumber:
+          type: string
+          maxLength: 36
+        retCode:
+          type: string
+          maxLength: 4
+        outcomeCode:
+          type: string
+          maxLength: 1
+        payDescription:
+          type: string
+          maxLength: 210
+        billerName:
+          type: string
+          maxLength: 140
+        billerOffice:
+          type: string
+          maxLength: 140
+        payOptAmount:
+          type: string
+          format: decimal
+        payOptType:
+          type: string
+          maxLength: 3
+        payOptDuedate:
+          type: string
+          format: date-time
+        payOptNote:
+          type: string
+          maxLength: 210
+        payToken:
+          type: string
+          maxLength: 35
+        tokenExpDt:
+          type: string
+          format: date-time
+        crdReferenceId:
+          type: string
+          maxLength: 35
+        atmCode:
+          type: string
+          maxLength: 10
+    PagopaTransferList:
+      type: object
+      required:
+        - id
+        - transferId
+        - transferAmount
+        - pagopaReported
+        - paFiscalCode
+        - paIban
+        - rmtInfo
+      properties:
+        id:
+          type: integer
+          format: int64
+        transferId:
+          type: integer
+          format: int32
+        transferAmount:
+          type: string
+          format: decimal
+        transferCro:
+          type: string
+          maxLength: 35
+        flowId:
+          type: string
+          maxLength: 35
+        pagopaReported:
+          type: boolean
+        transferExecutionDt:
+          type: string
+          format: date
+        paFiscalCode:
+          type: string
+          maxLength: 11
+        paName:
+          type: string
+          maxLength: 140
+        paIban:
+          type: string
+          maxLength: 34
+        rmtInfo:
+          type: string
+          maxLength: 140
+    CbillAbiFederazione:
+      type: object
+      required:
+        - abi
+        - pagopaId
+        - pspFiscalCode
+        - pspChannel
+      properties:
+        abi:
+          type: string
+          maxLength: 5
+        pagopaId:
+          type: string
+          maxLength: 35
+        pspFiscalCode:
+          type: string
+          maxLength: 11
+        pspChannel:
+          type: string
+          maxLength: 5
+        pagopaDirect:
+          type: boolean
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
