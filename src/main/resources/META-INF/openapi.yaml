@@ -80,14 +80,20 @@ paths:
                 $ref: '#/components/schemas/PagopaTransferList'
         '400':
           $ref: '#/components/responses/BadRequest'
-  /pagopa-transactions/{transactionId}/transfer-lists:
+  /pagopa-transfer-lists/transaction/{transactionId}:
     get:
       tags:
         - PagopaTransferList
       summary: Lista di trasferimenti per transazione
       operationId: listPagopaTransferListsByTransactionId
       parameters:
-        - $ref: '#/components/parameters/TransactionId'
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID della transazione
       responses:
         '200':
           description: Operazione eseguita con successo
