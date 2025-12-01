@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.smallrye.mutiny.Uni;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.CbillAbiFederazione;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.CbillAbiFederazioneRepository;
@@ -20,6 +21,7 @@ public class CbillAbiFederazioneServiceImpl implements CbillAbiFederazioneServic
     }
 
     @Override
+    @WithSession
     public Uni<List<CbillAbiFederazione>> findAll() {
         LOG.info("Calling findAll method to fetch all CbillAbiFederazione records.");
         return repository.listAll()
@@ -28,6 +30,7 @@ public class CbillAbiFederazioneServiceImpl implements CbillAbiFederazioneServic
     }
 
     @Override
+    @WithSession
     public Uni<CbillAbiFederazione> findByAbi(String abi) {
         LOG.info("Calling findByAbi method with ABI: " + abi);
         return repository.findById(abi)

@@ -1,11 +1,15 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
+import java.util.List;
+
+import org.jboss.logging.Logger;
+
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
+import io.smallrye.mutiny.Uni;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransactions;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.PagopaTransactionsRepository;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransactionsService;
-import java.util.List;
-import org.jboss.logging.Logger;
-import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
@@ -18,6 +22,7 @@ public class PagopaTransactionsServiceImpl implements PagopaTransactionsService 
     }
 
     @Override
+    @WithSession
     public Uni<List<PagopaTransactions>> findAll() {
         LOG.info("Calling findAll method to fetch all PagopaTransactions records.");
         return repository.listAll()
@@ -26,6 +31,7 @@ public class PagopaTransactionsServiceImpl implements PagopaTransactionsService 
     }
 
     @Override
+    @WithTransaction
     public Uni<PagopaTransactions> persist(PagopaTransactions entity) {
         LOG.info("Persisting PagopaTransactions entity: " + entity);
         return repository.persist(entity)

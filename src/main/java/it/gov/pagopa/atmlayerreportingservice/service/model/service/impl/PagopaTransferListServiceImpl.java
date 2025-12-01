@@ -5,6 +5,8 @@ import java.util.List;
 import org.jboss.logging.Logger;
 
 import io.smallrye.mutiny.Uni;
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.PagopaTransferListRepository;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransferListService;
@@ -20,18 +22,21 @@ public class PagopaTransferListServiceImpl implements PagopaTransferListService 
     }
 
     @Override
+    @WithSession
     public Uni<List<PagopaTransferList>> findAll() {
         LOG.info("Finding all PagopaTransferList entities");
         return repository.listAll();
     }
 
     @Override
+    @WithSession
     public Uni<List<PagopaTransferList>> findByTransactionId(Long transactionId) {
         LOG.info("Finding PagopaTransferList by transactionId: " + transactionId);
         return repository.find("pagopaTransaction.id", transactionId).list();
     }
 
     @Override
+    @WithTransaction
     public Uni<PagopaTransferList> persist(PagopaTransferList entity) {
         LOG.info("Persisting PagopaTransferList entity: " + entity);
         return repository.persist(entity);
