@@ -1,9 +1,7 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
 import java.util.List;
-
 import org.jboss.logging.Logger;
-
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
@@ -23,19 +21,19 @@ public class PagopaTransactionsServiceImpl implements PagopaTransactionsService 
 
     @Override
     @WithSession
+    public Uni<List<PagopaTransactions>> findBySenderBank(String senderBank) {
+        return repository.findBySenderBank(senderBank);
+    }
+
+    @Override
+    @WithSession
     public Uni<List<PagopaTransactions>> findAll() {
-        LOG.info("Calling findAll method to fetch all PagopaTransactions records.");
-        return repository.listAll()
-                .onItem().invoke(result -> LOG.info("Retrieved " + result.size() + " PagopaTransactions records."))
-                .onFailure().invoke(ex -> LOG.error("Error occurred while fetching PagopaTransactions records: " + ex.getMessage()));
+        return repository.listAll();
     }
 
     @Override
     @WithTransaction
     public Uni<PagopaTransactions> persist(PagopaTransactions entity) {
-        LOG.info("Persisting PagopaTransactions entity: " + entity);
-        return repository.persist(entity)
-                .onItem().invoke(result -> LOG.info("Persisted PagopaTransactions entity with ID: " + result.id))
-                .onFailure().invoke(ex -> LOG.error("Error occurred while persisting PagopaTransactions entity: " + ex.getMessage()));
+        return repository.persist(entity);
     }
 }

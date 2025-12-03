@@ -5,6 +5,8 @@ import io.smallrye.mutiny.Uni;
 import java.util.List;
 
 public interface PagopaTransactionsService {
+    Uni<List<PagopaTransactions>> findBySenderBank(String senderBank);
+
     Uni<List<PagopaTransactions>> findAll();
 
     Uni<PagopaTransactions> persist(PagopaTransactions entity);
