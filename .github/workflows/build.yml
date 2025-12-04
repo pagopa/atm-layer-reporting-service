@@ -1,0 +1,95 @@
+name: Build everytime push or merge
+
+on:
+  push:
+    branches:
+      - '**'        # matches every branch
+
+defaults:
+  run:
+    shell: bash
+
+permissions: write-all
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        environment: [dev]
+    name: "build"
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838
+        with:
+          role-to-assume: ${{ secrets.IAM_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
+
+      - name: Build docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.DOCKER_IMAGE_NAME}}
+          DOCKER_IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f src/main/docker/Dockerfile.native-micro-multistage -t $REGISTRY/$REPOSITORY:$DOCKER_IMAGE_TAG . \
+          --build-arg QUARKUS_PROFILE=prod \
+          --build-arg APP_NAME=atm-layer-reporting-service
+
+  test-and-coverage:
+    strategy:
+      matrix:
+        environment: [ dev ]
+    name: "coverage"
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Setup JDK
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test and Integration tests
+        run: |
+          mvn test -Dquarkus.package.type=native -Dquarkus.application.name=atm-layer-reporting-service -Dquarkus.profile=prod
+
+      - name: JaCoCo Code Coverage Report
+        id: jacoco_reporter
+        uses: PavanMudigonda/jacoco-reporter@v4.9
+        with:
+          coverage_results_path: target/jacoco-report/jacoco.xml
+          coverage_report_name: 'Coverage build ${{ github.run_number }}'
+          coverage_report_title: JaCoCo
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          skip_check_run: false
+          minimum_coverage: 90
+          fail_below_threshold: false
+          publish_only_summary: false
+
+      - name: Fail Build if overall coverage is less than 90%
+        if: steps.jacoco_reporter.outputs.coverage_percentage < 90.0
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setFailed('Overall coverage is less than 90%!')
+
+      - name: Code Review
+        run: |
+          mvn sonar:sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }} -Dsonar.projectKey=pagopa_atm-layer-reporting-service \
+          -Dsonar.organization=pagopa -Dsonar.java.binaries=src/main -Pcoverage \
+          -Dsonar.exclusions=src/main/docker/* \
+          -Dsonar.coverage.jacoco.xmlReportPaths=../atm-layer-reporting-service/target/jacoco-report/jacoco.xml
