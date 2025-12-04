@@ -1,7 +1,6 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
 import java.util.List;
-import org.jboss.logging.Logger;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
@@ -12,7 +11,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class PagopaTransactionsServiceImpl implements PagopaTransactionsService {
-    private static final Logger LOG = Logger.getLogger(PagopaTransactionsServiceImpl.class);
     private final PagopaTransactionsRepository repository;
 
     public PagopaTransactionsServiceImpl(PagopaTransactionsRepository repository) {
@@ -21,7 +19,22 @@ public class PagopaTransactionsServiceImpl implements PagopaTransactionsService 
 
     @Override
     @WithSession
+    public Uni<List<PagopaTransactions>> findAll(String senderBank) {
+        if (senderBank == null || senderBank.isBlank()) {
+            return Uni.createFrom().failure(new IllegalArgumentException("SenderBank header is required"));
+        }
+        return repository.findBySenderBank(senderBank);
+    }
+
+    @Override
+    @WithSession
     public Uni<List<PagopaTransactions>> findBySenderBank(String senderBank) {
+        return repository.findBySenderBank(senderBank);
+    }
+
+    @Override
+    @WithSession
+    public Uni<List<PagopaTransactions>> findAllBySenderBank(String senderBank) {
         return repository.findBySenderBank(senderBank);
     }
 
