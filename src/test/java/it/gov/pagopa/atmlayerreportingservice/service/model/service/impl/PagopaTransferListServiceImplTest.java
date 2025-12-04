@@ -1,5 +1,6 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
+import io.quarkus.test.junit.QuarkusTest;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.PagopaTransferListRepository;
 import io.smallrye.mutiny.Uni;
@@ -10,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+@QuarkusTest
 public class PagopaTransferListServiceImplTest {
     @Test
     void findAll_shouldReturnTransferLists_whenRepositoryReturnsData() {

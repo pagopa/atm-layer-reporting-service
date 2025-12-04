@@ -1,5 +1,6 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
+import io.quarkus.test.junit.QuarkusTest;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.CbillAbiFederazione;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.CbillAbiFederazioneRepository;
 import io.smallrye.mutiny.Uni;
@@ -8,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+@QuarkusTest
 public class CbillAbiFederazioneServiceImplTest {
     @Test
     void findAll_shouldReturnFederazioni_whenRepositoryReturnsData() {
