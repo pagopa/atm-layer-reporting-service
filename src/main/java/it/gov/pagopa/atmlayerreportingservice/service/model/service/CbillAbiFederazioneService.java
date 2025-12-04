@@ -8,4 +8,6 @@ public interface CbillAbiFederazioneService {
     Uni<List<CbillAbiFederazione>> findAll();
 
     Uni<CbillAbiFederazione> findByAbi(String abi);
+
+    Uni<CbillAbiFederazione> getPspConfiguration(String abi);
 }
