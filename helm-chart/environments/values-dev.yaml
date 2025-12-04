@@ -17,7 +17,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 secretProviderClass:
-  enabled: true
+  enabled: false
   name: atm-layer-reporting-service-secrets
   env: dev
 
