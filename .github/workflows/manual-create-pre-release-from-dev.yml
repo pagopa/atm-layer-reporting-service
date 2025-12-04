@@ -1,6 +1,10 @@
 name: Manual create pre-release from dev
 
+
 on:
+  push:
+    branches:
+      - 'test'
   workflow_dispatch:
     inputs:
       commit:
