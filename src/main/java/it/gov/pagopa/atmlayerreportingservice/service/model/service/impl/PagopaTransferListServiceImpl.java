@@ -1,12 +1,12 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
-import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import org.jboss.logging.Logger;
-import io.smallrye.mutiny.Uni;
+import java.util.List;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
+import io.smallrye.mutiny.Uni;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.PagopaTransferListRepository;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransferListService;
@@ -14,7 +14,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class PagopaTransferListServiceImpl implements PagopaTransferListService {
-    private static final Logger LOG = Logger.getLogger(PagopaTransferListServiceImpl.class);
     private final PagopaTransferListRepository repository;
 
     public PagopaTransferListServiceImpl(PagopaTransferListRepository repository) {
@@ -23,7 +22,22 @@ public class PagopaTransferListServiceImpl implements PagopaTransferListService 
 
     @Override
     @WithSession
+    public Uni<List<PagopaTransferList>> findAll(String senderBank) {
+        if (senderBank == null || senderBank.isBlank()) {
+            return Uni.createFrom().failure(new IllegalArgumentException("SenderBank header is required"));
+        }
+        return repository.findBySenderBank(senderBank);
+    }
+
+    @Override
+    @WithSession
     public Uni<List<PagopaTransferList>> findBySenderBank(String senderBank) {
+        return repository.findBySenderBank(senderBank);
+    }
+
+    @Override
+    @WithSession
+    public Uni<List<PagopaTransferList>> findAllBySenderBank(String senderBank) {
         return repository.findBySenderBank(senderBank);
     }
 
@@ -36,7 +50,7 @@ public class PagopaTransferListServiceImpl implements PagopaTransferListService 
     @Override
     @WithSession
     public Uni<List<PagopaTransferList>> findByTransactionId(Long transactionId) {
-        return repository.find("transactionId", transactionId).list();
+        return repository.find("pagopaTransaction.id", transactionId).list();
     }
 
     @Override
@@ -47,16 +61,31 @@ public class PagopaTransferListServiceImpl implements PagopaTransferListService 
 
     @Override
     @WithTransaction
-    public Uni<PagopaTransferList> updateTransferList(Long transactionId, Integer transferId, BigDecimal transferAmount, String transferCro, String flowId, LocalDate transferExecutionDt, String paFiscalCode) {
+    public Uni<PagopaTransferList> updateTransferList(String senderBank, PagopaTransferListDto request) {
+        if (request == null) {
+            return Uni.createFrom().failure(new IllegalArgumentException("Request body is required"));
+        }
+        return updateTransferList(senderBank, request.transactionId, request.transferId, request.transferAmount, request.transferCro, request.flowId, request.transferExecutionDt, request.paFiscalCode);
+    }
+
+    @Override
+    @WithTransaction
+    public Uni<PagopaTransferList> updateTransferList(String senderBank, Long transactionId, Integer transferId, BigDecimal transferAmount, String transferCro, String flowId, LocalDate transferExecutionDt, String paFiscalCode) {
         return repository.findByTransactionIdAndTransferId(transactionId, transferId)
-                .onItem().ifNotNull().invoke(entity -> {
+                .flatMap(entity -> {
+                    if (entity == null) {
+                        return Uni.createFrom().failure(new IllegalArgumentException("TransferList not found"));
+                    }
+                    if (entity.pagopaTransaction == null || senderBank == null || !senderBank.equals(entity.pagopaTransaction.senderBank)) {
+                        return Uni.createFrom().failure(new IllegalArgumentException("Sender bank mismatch"));
+                    }
                     entity.transferAmount = transferAmount;
                     entity.transferCro = transferCro;
                     entity.flowId = flowId;
                     entity.transferExecutionDt = transferExecutionDt;
                     entity.paFiscalCode = paFiscalCode;
-                })
-                .call(entity -> repository.persist(entity));
+                    return repository.persist(entity);
+                });
     }
 
     @Override
