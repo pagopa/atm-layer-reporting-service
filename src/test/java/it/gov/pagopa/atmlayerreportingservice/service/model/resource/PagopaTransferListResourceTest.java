@@ -3,11 +3,14 @@ package it.gov.pagopa.atmlayerreportingservice.service.model.resource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.ErrorResponseDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import it.gov.pagopa.atmlayerreportingservice.service.model.mapper.PagopaTransferListMapper;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransferListService;
 import java.util.List;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -89,6 +92,65 @@ class PagopaTransferListResourceTest {
         Mockito.verify(mapper).toEntity(input);
         Mockito.verify(service).persist(entity);
         Mockito.verify(mapper, Mockito.never()).toDto(Mockito.any());
+    }
+
+    @Test
+    void updatePagopaTransferList_shouldReturnOkResponse_whenUpdateSucceeds() {
+        String senderBank = "BANK";
+        PagopaTransferListDto request = new PagopaTransferListDto();
+        request.transactionId = 1L;
+        request.transferId = 2;
+        PagopaTransferList entity = new PagopaTransferList();
+        PagopaTransferListDto updatedDto = new PagopaTransferListDto();
+        Mockito.when(service.updateTransferList(senderBank, request)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(mapper.toDto(entity)).thenReturn(updatedDto);
+
+        UniAssertSubscriber<Response> subscriber = resource.updatePagopaTransferList(senderBank, request)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Mockito.verify(service).updateTransferList(senderBank, request);
+        Mockito.verify(mapper).toDto(entity);
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Assertions.assertSame(updatedDto, response.getEntity());
+    }
+
+    @Test
+    void updatePagopaTransferList_shouldReturnNotFound_whenServiceFailsWithNotFoundMessage() {
+        String senderBank = "BANK";
+        PagopaTransferListDto request = new PagopaTransferListDto();
+        RuntimeException failure = new RuntimeException("element not found");
+        Mockito.when(service.updateTransferList(senderBank, request)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.updatePagopaTransferList(senderBank, request)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Mockito.verify(service).updateTransferList(senderBank, request);
+        Mockito.verifyNoInteractions(mapper);
+        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        Object entity = response.getEntity();
+        Assertions.assertTrue(entity instanceof ErrorResponseDto);
+        Assertions.assertEquals("element not found", ((ErrorResponseDto) entity).message);
+    }
+
+    @Test
+    void updatePagopaTransferList_shouldReturnBadRequest_whenServiceFailsWithOtherMessage() {
+        String senderBank = "BANK";
+        PagopaTransferListDto request = new PagopaTransferListDto();
+        RuntimeException failure = new RuntimeException("invalid data");
+        Mockito.when(service.updateTransferList(senderBank, request)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.updatePagopaTransferList(senderBank, request)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Mockito.verify(service).updateTransferList(senderBank, request);
+        Mockito.verifyNoInteractions(mapper);
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        Object entity = response.getEntity();
+        Assertions.assertTrue(entity instanceof ErrorResponseDto);
+        Assertions.assertEquals("invalid data", ((ErrorResponseDto) entity).message);
     }
 
     @Test
