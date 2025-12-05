@@ -27,7 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
-@Path("/pagopa-transfer-lists")
+@Path("/transfer-lists")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "PagopaTransferList", description = "Operazioni sugli elementi della lista di trasferimento PagoPA")
