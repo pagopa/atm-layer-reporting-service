@@ -25,7 +25,7 @@ secretProviderClass:
 
 database:
   type: postgresql
-  jdbc_url: postgresql://pagopa-uat-atm-layer-rds.cluster-cyezwzpjc2tj.eu-south-1.rds.amazonaws.com:5431/pagopadb?search_path=atm_layer_model_schema
+  jdbc_url: jdbc:postgresql://pagopa-uat-atm-layer-rds.cluster-cyezwzpjc2tj.eu-south-1.rds.amazonaws.com:5431/pagopadb?search_path=atm_layer_model_schema
   reactive_url: postgresql://pagopa-uat-atm-layer-rds.cluster-cyezwzpjc2tj.eu-south-1.rds.amazonaws.com:5431/pagopadb?search_path=atm_layer_model_schema
   db_name: pagopadb
   credentialsSecretEnabled: true
