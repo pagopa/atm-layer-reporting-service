@@ -46,6 +46,7 @@ spec:
               value: "{{ .Values.database.jdbc_url }}"
             - name: REPORTING_DB_REACTIVE_URL
               value: "{{ .Values.database.reactive_url }}"
+              {{- if .Values.database.credentialsSecretEnabled }}
             - name: REPORTING_DB_USERNAME
               valueFrom:
                 secretKeyRef:
