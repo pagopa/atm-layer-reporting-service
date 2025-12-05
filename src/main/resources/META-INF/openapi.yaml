@@ -81,8 +81,7 @@ paths:
                 $ref: '#/components/schemas/PagopaTransferList'
         '400':
           $ref: '#/components/responses/BadRequest'
-  /pagopa-report-lists:
-    patch:
+    put:
       tags:
         - PagopaTransferList
       summary: Aggiorna un elemento di trasferimento esistente

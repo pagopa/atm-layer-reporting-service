@@ -10,11 +10,14 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -52,6 +55,30 @@ public class PagopaTransferListResource {
     public Uni<PagopaTransferListDto> createPagopaTransferList(@Valid PagopaTransferListDto dto) {
         LOG.info("Received request to create a new PagopaTransferList");
         return service.persist(mapper.toEntity(dto)).map(mapper::toDto);
+    }
+
+    @PUT
+    @Operation(operationId = "updatePagopaTransferList", summary = "Aggiorna un elemento di trasferimento esistente")
+    @APIResponse(responseCode = "200", description = "Elemento di trasferimento aggiornato", content = @Content(schema = @Schema(implementation = PagopaTransferListDto.class)))
+    @APIResponse(responseCode = "400", description = "Richiesta non valida", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    @APIResponse(responseCode = "404", description = "Risorsa non trovata", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    public Uni<Response> updatePagopaTransferList(@HeaderParam("SenderBank") String senderBank, @Valid PagopaTransferListDto dto) {
+        LOG.info("Received request to update PagopaTransferList for transactionId: " + dto.transactionId + " transferId: " + dto.transferId);
+        return service.updateTransferList(senderBank, dto)
+                .map(mapper::toDto)
+                .map(updated -> Response.ok(updated).build())
+                .onFailure().recoverWithItem(throwable -> {
+                    // Map common IllegalArgumentException to 400/404 depending on message
+                    String msg = throwable.getMessage() != null ? throwable.getMessage() : "Internal error";
+                    if (msg.contains("not found") || msg.toLowerCase().contains("not found")) {
+                        ErrorResponseDto err = new ErrorResponseDto();
+                        err.message = msg;
+                        return Response.status(Response.Status.NOT_FOUND).entity(err).build();
+                    }
+                    ErrorResponseDto err = new ErrorResponseDto();
+                    err.message = msg;
+                    return Response.status(Response.Status.BAD_REQUEST).entity(err).build();
+                });
     }
 
     @GET
