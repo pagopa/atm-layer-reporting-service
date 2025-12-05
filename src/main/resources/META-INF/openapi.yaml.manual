@@ -13,7 +13,7 @@ tags:
   - name: CbillAbiFederazione
     description: Operazioni sulla federazione ABI CBILL
 paths:
-  /api/v1/transactions:
+  /transactions:
     get:
       tags:
         - PagopaTransactions
@@ -46,7 +46,7 @@ paths:
                 $ref: '#/components/schemas/PagopaTransactions'
         '400':
           $ref: '#/components/responses/BadRequest'
-  /api/v1/transfer-lists:
+  /transfer-lists:
     get:
       tags:
         - PagopaTransferList
@@ -101,7 +101,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/v1/transactions/{transactionId}/transfer-lists:
+  /transactions/{transactionId}/transfer-lists:
     get:
       tags:
         - PagopaTransferList
