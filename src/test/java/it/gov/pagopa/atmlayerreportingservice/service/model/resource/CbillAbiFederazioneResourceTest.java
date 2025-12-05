@@ -1,74 +1,103 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.resource;
 
+import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import it.gov.pagopa.atmlayerreportingservice.service.model.dto.CbillAbiFederazioneDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.CbillAbiFederazione;
 import it.gov.pagopa.atmlayerreportingservice.service.model.mapper.CbillAbiFederazioneMapper;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.CbillAbiFederazioneService;
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class CbillAbiFederazioneResourceTest {
+@QuarkusTest
+class CbillAbiFederazioneResourceTest {
 
-    private CbillAbiFederazioneResource resource;
-    private CbillAbiFederazioneService service;
-    private CbillAbiFederazioneMapper mapper;
+    CbillAbiFederazioneService service;
+    CbillAbiFederazioneMapper mapper;
+    CbillAbiFederazioneResource resource;
 
     @BeforeEach
-    void setup() {
-        resource = new CbillAbiFederazioneResource();
+    void setUp() {
         service = Mockito.mock(CbillAbiFederazioneService.class);
         mapper = Mockito.mock(CbillAbiFederazioneMapper.class);
+        resource = new CbillAbiFederazioneResource();
         resource.service = service;
         resource.mapper = mapper;
     }
 
     @Test
-    void list_shouldReturnDtos() {
-        CbillAbiFederazione entity = new CbillAbiFederazione();
-        CbillAbiFederazioneDto dto = new CbillAbiFederazioneDto();
-        Mockito.when(service.findAll()).thenReturn(Uni.createFrom().item(List.of(entity)));
-        Mockito.when(mapper.toDtoList(List.of(entity))).thenReturn(List.of(dto));
+    void listCbillAbiFederazione_shouldReturnMappedDtos_whenServiceReturnsEntities() {
+        List<CbillAbiFederazione> entities = List.of(new CbillAbiFederazione());
+        List<CbillAbiFederazioneDto> dtos = List.of(new CbillAbiFederazioneDto());
+        Mockito.when(service.findAll()).thenReturn(Uni.createFrom().item(entities));
+        Mockito.when(mapper.toDtoList(entities)).thenReturn(dtos);
 
-        UniAssertSubscriber<List<CbillAbiFederazioneDto>> subscriber = resource.listCbillAbiFederazione().subscribe().withSubscriber(UniAssertSubscriber.create());
+        UniAssertSubscriber<List<CbillAbiFederazioneDto>> subscriber = resource.listCbillAbiFederazione()
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertCompleted().assertItem(List.of(dto));
+        subscriber.assertCompleted().assertItem(dtos);
         Mockito.verify(service).findAll();
+        Mockito.verify(mapper).toDtoList(entities);
     }
 
     @Test
-    void list_shouldPropagateFailure() {
-        RuntimeException error = new RuntimeException("err");
-        Mockito.when(service.findAll()).thenReturn(Uni.createFrom().failure(error));
+    void listCbillAbiFederazione_shouldPropagateFailure_whenServiceFails() {
+        RuntimeException failure = new RuntimeException("find all failed");
+        Mockito.when(service.findAll()).thenReturn(Uni.createFrom().failure(failure));
 
-        UniAssertSubscriber<List<CbillAbiFederazioneDto>> subscriber = resource.listCbillAbiFederazione().subscribe().withSubscriber(UniAssertSubscriber.create());
+        UniAssertSubscriber<List<CbillAbiFederazioneDto>> subscriber = resource.listCbillAbiFederazione()
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertFailedWith(RuntimeException.class, "err");
+        subscriber.assertFailedWith(RuntimeException.class, "find all failed");
+        Mockito.verify(service).findAll();
+        Mockito.verifyNoInteractions(mapper);
     }
 
     @Test
-    void getByAbi_shouldReturnDto() {
+    void getCbillAbiFederazioneByAbi_shouldReturnDto_whenEntityFound() {
+        String abi = "12345";
         CbillAbiFederazione entity = new CbillAbiFederazione();
         CbillAbiFederazioneDto dto = new CbillAbiFederazioneDto();
-        Mockito.when(service.findByAbi("12345")).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().item(entity));
         Mockito.when(mapper.toDto(entity)).thenReturn(dto);
 
-        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
+        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertCompleted().assertItem(dto);
-        Mockito.verify(service).findByAbi("12345");
+        Mockito.verify(service).findByAbi(abi);
+        Mockito.verify(mapper).toDto(entity);
     }
 
     @Test
-    void getByAbi_shouldPropagateFailure() {
-        RuntimeException error = new RuntimeException("fail");
-        Mockito.when(service.findByAbi("999")).thenReturn(Uni.createFrom().failure(error));
+    void getCbillAbiFederazioneByAbi_shouldReturnNull_whenMapperReturnsNull() {
+        String abi = "67890";
+        CbillAbiFederazione entity = new CbillAbiFederazione();
+        Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(mapper.toDto(entity)).thenReturn(null);
 
-        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi("999").subscribe().withSubscriber(UniAssertSubscriber.create());
+        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertFailedWith(RuntimeException.class, "fail");
+        subscriber.assertCompleted().assertItem(null);
+        Mockito.verify(service).findByAbi(abi);
+        Mockito.verify(mapper).toDto(entity);
+    }
+
+    @Test
+    void getCbillAbiFederazioneByAbi_shouldPropagateFailure_whenServiceFails() {
+        String abi = "99999";
+        RuntimeException failure = new RuntimeException("find by abi failed");
+        Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(RuntimeException.class, "find by abi failed");
+        Mockito.verify(service).findByAbi(abi);
+        Mockito.verifyNoInteractions(mapper);
     }
 }

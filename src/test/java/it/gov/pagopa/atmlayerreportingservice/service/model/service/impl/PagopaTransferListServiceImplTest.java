@@ -3,8 +3,11 @@ package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 import io.quarkus.test.junit.QuarkusTest;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.PagopaTransferListRepository;
+import io.quarkus.hibernate.reactive.panache.PanacheQuery;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListDto;
+import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransactions;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -53,7 +56,7 @@ public class PagopaTransferListServiceImplTest {
         PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
         PagopaTransferList transfer = new PagopaTransferList();
         transfer.id = 1L;
-        io.quarkus.hibernate.reactive.panache.PanacheQuery<PagopaTransferList> query = Mockito.mock(io.quarkus.hibernate.reactive.panache.PanacheQuery.class);
+        PanacheQuery<PagopaTransferList> query = Mockito.mock(PanacheQuery.class);
         Mockito.when(repository.find("pagopaTransaction.id", 1L)).thenReturn(query);
         Mockito.when(query.list()).thenReturn(Uni.createFrom().item(List.of(transfer)));
 
@@ -69,7 +72,7 @@ public class PagopaTransferListServiceImplTest {
         PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
         PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
         RuntimeException failure = new RuntimeException("error");
-        io.quarkus.hibernate.reactive.panache.PanacheQuery<PagopaTransferList> query = Mockito.mock(io.quarkus.hibernate.reactive.panache.PanacheQuery.class);
+        PanacheQuery<PagopaTransferList> query = Mockito.mock(PanacheQuery.class);
         Mockito.when(repository.find("pagopaTransaction.id", 1L)).thenReturn(query);
         Mockito.when(query.list()).thenReturn(Uni.createFrom().failure(failure));
 
@@ -105,5 +108,123 @@ public class PagopaTransferListServiceImplTest {
 
         subscriber.assertFailedWith(failure.getClass(), "persist error");
         Mockito.verify(repository).persist(transfer);
+    }
+
+    @Test
+    void findAllWithSenderBank_shouldFail_whenSenderBankBlank() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+
+        UniAssertSubscriber<List<PagopaTransferList>> subscriber = service.findAll("  ").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "SenderBank header is required");
+    }
+
+    @Test
+    void findAllWithSenderBank_shouldDelegateToRepository_whenHeaderProvided() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+        PagopaTransferList transfer = new PagopaTransferList();
+        Mockito.when(repository.findBySenderBank("BANK")).thenReturn(Uni.createFrom().item(List.of(transfer)));
+
+        UniAssertSubscriber<List<PagopaTransferList>> subscriber = service.findAll("BANK").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(List.of(transfer));
+        Mockito.verify(repository).findBySenderBank("BANK");
+    }
+
+    @Test
+    void findBySenderBank_shouldReturnList_whenRepositoryProvidesData() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+        PagopaTransferList transfer = new PagopaTransferList();
+        Mockito.when(repository.findBySenderBank("BANK")).thenReturn(Uni.createFrom().item(List.of(transfer)));
+
+        UniAssertSubscriber<List<PagopaTransferList>> subscriber = service.findBySenderBank("BANK").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(List.of(transfer));
+        Mockito.verify(repository).findBySenderBank("BANK");
+    }
+
+    @Test
+    void findAllBySenderBank_shouldReturnList_whenRepositoryProvidesData() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+        PagopaTransferList transfer = new PagopaTransferList();
+        Mockito.when(repository.findBySenderBank("BANK")).thenReturn(Uni.createFrom().item(List.of(transfer)));
+
+        UniAssertSubscriber<List<PagopaTransferList>> subscriber = service.findAllBySenderBank("BANK").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(List.of(transfer));
+        Mockito.verify(repository).findBySenderBank("BANK");
+    }
+
+    @Test
+    void updateTransferListWithDto_shouldPersistUpdatedEntity_whenSenderMatches() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+        PagopaTransferListDto dto = new PagopaTransferListDto();
+        dto.transactionId = 1L;
+        dto.transferId = 2;
+        dto.transferAmount = BigDecimal.TEN;
+        dto.transferCro = "CRO";
+        dto.flowId = "FLOW";
+        dto.transferExecutionDt = LocalDate.of(2024, 1, 2);
+        dto.paFiscalCode = "FISCAL";
+        PagopaTransferList entity = new PagopaTransferList();
+        PagopaTransactions tx = new PagopaTransactions();
+        tx.senderBank = "BANK";
+        entity.pagopaTransaction = tx;
+        Mockito.when(repository.findByTransactionIdAndTransferId(1L, 2)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(repository.persist(entity)).thenReturn(Uni.createFrom().item(entity));
+
+        UniAssertSubscriber<PagopaTransferList> subscriber = service.updateTransferList("BANK", dto).subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(entity);
+        Mockito.verify(repository).persist(entity);
+        org.junit.jupiter.api.Assertions.assertEquals(BigDecimal.TEN, entity.transferAmount);
+        org.junit.jupiter.api.Assertions.assertEquals("CRO", entity.transferCro);
+        org.junit.jupiter.api.Assertions.assertEquals("FLOW", entity.flowId);
+        org.junit.jupiter.api.Assertions.assertEquals(LocalDate.of(2024, 1, 2), entity.transferExecutionDt);
+        org.junit.jupiter.api.Assertions.assertEquals("FISCAL", entity.paFiscalCode);
+    }
+
+    @Test
+    void updateTransferList_shouldFail_whenTransactionMissingOnEntity() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+        PagopaTransferList entity = new PagopaTransferList();
+        Mockito.when(repository.findByTransactionIdAndTransferId(1L, 2)).thenReturn(Uni.createFrom().item(entity));
+
+        UniAssertSubscriber<PagopaTransferList> subscriber = service.updateTransferList("BANK", 1L, 2, BigDecimal.ONE, "CRO", "FLOW", LocalDate.now(), "PF").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "Sender bank mismatch");
+    }
+
+    @Test
+    void markAsReported_shouldCompleteWithoutPersist_whenEntityNotFound() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+        Mockito.when(repository.findById(5L)).thenReturn(Uni.createFrom().item((PagopaTransferList) null));
+        Mockito.when(repository.persist(Mockito.<PagopaTransferList>isNull())).thenReturn(Uni.createFrom().item((PagopaTransferList) null));
+
+        UniAssertSubscriber<Void> subscriber = service.markAsReported(5L).subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Mockito.verify(repository).findById(5L);
+        Mockito.verify(repository).persist(Mockito.<PagopaTransferList>isNull());
+    }
+
+    @Test
+    void findPayedNotReportedToPagoPAForBank_shouldDelegateToRepository() {
+        PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
+        PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
+        PagopaTransferList transfer = new PagopaTransferList();
+        Mockito.when(repository.findPayedNotReportedToPagoPAForBank(LocalDate.of(2024, 1, 1), "BANK")).thenReturn(Uni.createFrom().item(List.of(transfer)));
+
+        UniAssertSubscriber<List<PagopaTransferList>> subscriber = service.findPayedNotReportedToPagoPAForBank(LocalDate.of(2024, 1, 1), "BANK").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(List.of(transfer));
+        Mockito.verify(repository).findPayedNotReportedToPagoPAForBank(LocalDate.of(2024, 1, 1), "BANK");
     }
 }

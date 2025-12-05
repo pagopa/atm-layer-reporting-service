@@ -1,5 +1,6 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.mapper;
 
+import io.quarkus.test.junit.QuarkusTest;
 import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransactions;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
@@ -9,7 +10,8 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class PagopaTransferListMapperImplTest {
+@QuarkusTest
+class PagopaTransferListMapperImplTest {
 
     private final PagopaTransferListMapper mapper = new PagopaTransferListMapperImpl();
 
@@ -35,6 +37,7 @@ public class PagopaTransferListMapperImplTest {
         Assertions.assertEquals(dto.transactionId, entity.pagopaTransaction.id);
         Assertions.assertEquals(dto.transferId, entity.transferId);
         Assertions.assertEquals(dto.rmtInfo, entity.rmtInfo);
+        Assertions.assertEquals(dto.paName, entity.paName);
     }
 
     @Test
@@ -60,6 +63,20 @@ public class PagopaTransferListMapperImplTest {
         Assertions.assertEquals(transaction.id, dto.transactionId);
         Assertions.assertEquals(entity.transferId, dto.transferId);
         Assertions.assertEquals(entity.paIban, dto.paIban);
+        Assertions.assertEquals(entity.paName, dto.paName);
+    }
+
+    @Test
+    void toDto_shouldSetTransactionIdNull_whenNestedTransactionMissing() {
+        PagopaTransferList entity = new PagopaTransferList();
+        entity.id = 50L;
+        entity.transferId = 7;
+        entity.transferAmount = BigDecimal.ZERO;
+
+        PagopaTransferListDto dto = mapper.toDto(entity);
+
+        Assertions.assertNull(dto.transactionId);
+        Assertions.assertEquals(entity.transferId, dto.transferId);
     }
 
     @Test
