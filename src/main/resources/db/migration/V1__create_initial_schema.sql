@@ -1,4 +1,6 @@
-﻿CREATE TABLE IF NOT EXISTS pagopa_transactions (
+﻿CREATE SCHEMA IF NOT EXISTS atm_layer_reporting_schema;
+
+CREATE TABLE IF NOT EXISTS atm_layer_reporting_schema.pagopa_transactions (
     id BIGINT PRIMARY KEY,
     transaction_id VARCHAR(36) NOT NULL UNIQUE,
     status VARCHAR(1) NOT NULL,
@@ -29,7 +31,7 @@
     atm_code VARCHAR(10) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS pagopa_transfer_list (
+CREATE TABLE IF NOT EXISTS atm_layer_reporting_schema.pagopa_transfer_list (
     id BIGINT PRIMARY KEY,
     transaction_id BIGINT NOT NULL,
     transfer_id INTEGER NOT NULL,
@@ -47,7 +49,7 @@ CREATE TABLE IF NOT EXISTS pagopa_transfer_list (
         REFERENCES pagopa_transactions(id)
 );
 
-CREATE TABLE IF NOT EXISTS cbill_abi_federazione (
+CREATE TABLE IF NOT EXISTS atm_layer_reporting_schema.cbill_abi_federazione (
     abi VARCHAR(5) PRIMARY KEY,
     pagopa_id VARCHAR(35) NOT NULL,
     psp_fiscal_code VARCHAR(11) NOT NULL,
