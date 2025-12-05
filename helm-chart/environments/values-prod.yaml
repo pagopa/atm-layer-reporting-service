@@ -107,7 +107,7 @@ ingress:
   hosts:
     - host:
       paths:
-        - path: /api/v1/transfer-lists
+        - path: /api/v1/reporting-service
           pathType: Prefix
   tls: []
   #  - secretName: chart-example-tls
