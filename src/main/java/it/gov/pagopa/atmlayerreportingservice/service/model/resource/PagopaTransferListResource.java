@@ -2,6 +2,7 @@ package it.gov.pagopa.atmlayerreportingservice.service.model.resource;
 
 import it.gov.pagopa.atmlayerreportingservice.service.model.dto.ErrorResponseDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListDto;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListUpdateDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.mapper.PagopaTransferListMapper;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransferListService;
 import io.smallrye.mutiny.Uni;
@@ -40,12 +41,26 @@ public class PagopaTransferListResource {
     PagopaTransferListMapper mapper;
 
     @GET
-    @Operation(operationId = "listPagopaTransferLists", summary = "Lista degli elementi di trasferimento")
+    @Operation(operationId = "listPagopaTransferLists", summary = "Lista degli elementi di trasferimento filtrata per banca")
     @APIResponse(responseCode = "200", description = "Operazione eseguita con successo", content = @Content(schema = @Schema(implementation = PagopaTransferListDto[].class)))
     @APIResponse(responseCode = "400", description = "Richiesta non valida", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
-    public Uni<List<PagopaTransferListDto>> listPagopaTransferLists() {
-        LOG.info("Received request to list all PagopaTransferLists.");
-        return service.findAll().map(mapper::toDtoList);
+    public Uni<Response> listPagopaTransferLists(@HeaderParam("SenderBank") String senderBank) {
+        LOG.info("Received request to list PagopaTransferLists for senderBank: " + senderBank);
+        if (senderBank == null || senderBank.isEmpty()) {
+            LOG.warn("SenderBank header is missing");
+            ErrorResponseDto errorResponse = new ErrorResponseDto();
+            errorResponse.message = "SenderBank header is required";
+            return Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build());
+        }
+        return service.findBySenderBank(senderBank)
+                .map(mapper::toDtoList)
+                .map(dtos -> Response.ok(dtos).build())
+                .onFailure().recoverWithItem(throwable -> {
+                    String msg = throwable.getMessage() != null ? throwable.getMessage() : "Internal error";
+                    ErrorResponseDto errorResponse = new ErrorResponseDto();
+                    errorResponse.message = msg;
+                    return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+                });
     }
 
     @POST
@@ -62,7 +77,7 @@ public class PagopaTransferListResource {
     @APIResponse(responseCode = "200", description = "Elemento di trasferimento aggiornato", content = @Content(schema = @Schema(implementation = PagopaTransferListDto.class)))
     @APIResponse(responseCode = "400", description = "Richiesta non valida", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     @APIResponse(responseCode = "404", description = "Risorsa non trovata", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
-    public Uni<Response> updatePagopaTransferList(@HeaderParam("SenderBank") String senderBank, @Valid PagopaTransferListDto dto) {
+    public Uni<Response> updatePagopaTransferList(@HeaderParam("SenderBank") String senderBank, @Valid PagopaTransferListUpdateDto dto) {
         LOG.info("Received request to update PagopaTransferList for transactionId: " + dto.transactionId + " transferId: " + dto.transferId);
         return service.updateTransferList(senderBank, dto)
                 .map(mapper::toDto)

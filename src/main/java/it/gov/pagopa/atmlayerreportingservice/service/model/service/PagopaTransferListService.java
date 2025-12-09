@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListDto;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListUpdateDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import io.smallrye.mutiny.Uni;
 
@@ -20,9 +21,9 @@ public interface PagopaTransferListService {
 
     Uni<PagopaTransferList> persist(PagopaTransferList entity);
 
-    Uni<PagopaTransferList> updateTransferList(String senderBank, PagopaTransferListDto request);
+    Uni<PagopaTransferList> updateTransferList(String senderBank, PagopaTransferListUpdateDto request);
 
-    Uni<PagopaTransferList> updateTransferList(String senderBank, Long transactionId, Integer transferId, BigDecimal transferAmount, String transferCro, String flowId, LocalDate transferExecutionDt, String paFiscalCode);
+    Uni<PagopaTransferList> updateTransferList(String senderBank, String transactionId, Integer transferId, BigDecimal transferAmount, String transferCro, String flowId, LocalDate transferExecutionDt, String iuv);
 
     Uni<List<PagopaTransferList>> findPayedNotReportedToPagoPAForBank(LocalDate toDate, String senderBank);
 

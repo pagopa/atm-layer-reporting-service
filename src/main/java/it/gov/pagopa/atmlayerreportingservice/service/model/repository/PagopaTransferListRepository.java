@@ -19,6 +19,10 @@ public class PagopaTransferListRepository implements PanacheRepositoryBase<Pagop
     }
 
     public Uni<PagopaTransferList> findByTransactionIdAndTransferId(Long transactionId, Integer transferId) {
+        return find("pagopaTransaction.id = ?1 and transferId = ?2", transactionId, transferId).firstResult();
+    }
+
+    public Uni<PagopaTransferList> findByTransactionIdAndTransferId(String transactionId, Integer transferId) {
         return find("pagopaTransaction.transactionId = ?1 and transferId = ?2", transactionId, transferId).firstResult();
     }
 

@@ -1,6 +1,7 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
 import io.quarkus.test.junit.QuarkusTest;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListUpdateDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.PagopaTransferListRepository;
 import io.quarkus.hibernate.reactive.panache.PanacheQuery;
@@ -163,19 +164,18 @@ public class PagopaTransferListServiceImplTest {
     void updateTransferListWithDto_shouldPersistUpdatedEntity_whenSenderMatches() {
         PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
         PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
-        PagopaTransferListDto dto = new PagopaTransferListDto();
-        dto.transactionId = 1L;
+        PagopaTransferListUpdateDto dto = new PagopaTransferListUpdateDto();
+        dto.transactionId = "1L";
         dto.transferId = 2;
         dto.transferAmount = BigDecimal.TEN;
         dto.transferCro = "CRO";
         dto.flowId = "FLOW";
         dto.transferExecutionDt = LocalDate.of(2024, 1, 2);
-        dto.paFiscalCode = "FISCAL";
         PagopaTransferList entity = new PagopaTransferList();
         PagopaTransactions tx = new PagopaTransactions();
         tx.senderBank = "BANK";
         entity.pagopaTransaction = tx;
-        Mockito.when(repository.findByTransactionIdAndTransferId(1L, 2)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(repository.findByTransactionIdAndTransferId("1L", 2)).thenReturn(Uni.createFrom().item(entity));
         Mockito.when(repository.persist(entity)).thenReturn(Uni.createFrom().item(entity));
 
         UniAssertSubscriber<PagopaTransferList> subscriber = service.updateTransferList("BANK", dto).subscribe().withSubscriber(UniAssertSubscriber.create());
@@ -186,7 +186,6 @@ public class PagopaTransferListServiceImplTest {
         org.junit.jupiter.api.Assertions.assertEquals("CRO", entity.transferCro);
         org.junit.jupiter.api.Assertions.assertEquals("FLOW", entity.flowId);
         org.junit.jupiter.api.Assertions.assertEquals(LocalDate.of(2024, 1, 2), entity.transferExecutionDt);
-        org.junit.jupiter.api.Assertions.assertEquals("FISCAL", entity.paFiscalCode);
     }
 
     @Test
@@ -194,9 +193,9 @@ public class PagopaTransferListServiceImplTest {
         PagopaTransferListRepository repository = Mockito.mock(PagopaTransferListRepository.class);
         PagopaTransferListServiceImpl service = new PagopaTransferListServiceImpl(repository);
         PagopaTransferList entity = new PagopaTransferList();
-        Mockito.when(repository.findByTransactionIdAndTransferId(1L, 2)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(repository.findByTransactionIdAndTransferId("1L", 2)).thenReturn(Uni.createFrom().item(entity));
 
-        UniAssertSubscriber<PagopaTransferList> subscriber = service.updateTransferList("BANK", 1L, 2, BigDecimal.ONE, "CRO", "FLOW", LocalDate.now(), "PF").subscribe().withSubscriber(UniAssertSubscriber.create());
+        UniAssertSubscriber<PagopaTransferList> subscriber = service.updateTransferList("BANK", "1L", 2, BigDecimal.ONE, "CRO", "FLOW", LocalDate.now(), "PF").subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertFailedWith(IllegalArgumentException.class, "Sender bank mismatch");
     }

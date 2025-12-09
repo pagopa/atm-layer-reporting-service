@@ -91,14 +91,14 @@ class PagopaTransferListRepositoryTest {
         Integer transferId = 5;
         PagopaTransferList entity = new PagopaTransferList();
         PanacheQuery<PagopaTransferList> query = Mockito.mock(PanacheQuery.class);
-        Mockito.doReturn(query).when(repository).find("pagopaTransaction.transactionId = ?1 and transferId = ?2", transactionId, transferId);
+        Mockito.doReturn(query).when(repository).find("pagopaTransaction.id = ?1 and transferId = ?2", transactionId, transferId);
         Mockito.when(query.firstResult()).thenReturn(Uni.createFrom().item(entity));
 
         UniAssertSubscriber<PagopaTransferList> subscriber = repository.findByTransactionIdAndTransferId(transactionId, transferId)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertCompleted().assertItem(entity);
-        Mockito.verify(repository).find("pagopaTransaction.transactionId = ?1 and transferId = ?2", transactionId, transferId);
+        Mockito.verify(repository).find("pagopaTransaction.id = ?1 and transferId = ?2", transactionId, transferId);
         Mockito.verify(query).firstResult();
     }
 
@@ -108,14 +108,14 @@ class PagopaTransferListRepositoryTest {
         Integer transferId = 7;
         RuntimeException failure = new RuntimeException("firstResult failed");
         PanacheQuery<PagopaTransferList> query = Mockito.mock(PanacheQuery.class);
-        Mockito.doReturn(query).when(repository).find("pagopaTransaction.transactionId = ?1 and transferId = ?2", transactionId, transferId);
+        Mockito.doReturn(query).when(repository).find("pagopaTransaction.id = ?1 and transferId = ?2", transactionId, transferId);
         Mockito.when(query.firstResult()).thenReturn(Uni.createFrom().failure(failure));
 
         UniAssertSubscriber<PagopaTransferList> subscriber = repository.findByTransactionIdAndTransferId(transactionId, transferId)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertFailedWith(RuntimeException.class, "firstResult failed");
-        Mockito.verify(repository).find("pagopaTransaction.transactionId = ?1 and transferId = ?2", transactionId, transferId);
+        Mockito.verify(repository).find("pagopaTransaction.id = ?1 and transferId = ?2", transactionId, transferId);
         Mockito.verify(query).firstResult();
     }
 
