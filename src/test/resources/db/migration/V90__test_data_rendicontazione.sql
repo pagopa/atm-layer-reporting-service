@@ -3,6 +3,9 @@
 -- This file is automatically executed by Flyway during test database initialization
 -- Location: src/test/resources/db/migration/V90__test_data_rendicontazione.sql
 
+ALTER TABLE atm_layer_reporting_schema.cbill_abi_federazione
+    ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT '' NOT NULL;
+
 
 -- ===================================================================
 -- 1. Insert CBILL_ABI_FEDERAZIONE records
@@ -11,18 +14,18 @@
 -- SENDER_BANK is always equals to ABI in PAGOPA_TRANSACTIONS table
 
 -- ABI 09514 -> BNLIITRR (PSP Fiscal Code: 05963231005)
-INSERT INTO atm_layer_reporting_schema.cbill_abi_federazione (abi, pagopa_id, psp_fiscal_code, psp_channel, pagopa_direct)
-VALUES ('09514', 'BNLIITRR', '05963231005', '_03', true)
+INSERT INTO atm_layer_reporting_schema.cbill_abi_federazione (abi, pagopa_id, psp_fiscal_code, psp_channel, password, pagopa_direct)
+VALUES ('09514', 'BNLIITRR', '05963231005', '_03', 'password-09514', true)
 ON CONFLICT (abi) DO NOTHING;
 
 -- PSP AGID_01
-INSERT INTO atm_layer_reporting_schema.cbill_abi_federazione (abi, pagopa_id, psp_fiscal_code, psp_channel, pagopa_direct)
-VALUES ('12345', 'AGID_01', '97735020584', '_03', false)
+INSERT INTO atm_layer_reporting_schema.cbill_abi_federazione (abi, pagopa_id, psp_fiscal_code, psp_channel, password, pagopa_direct)
+VALUES ('12345', 'AGID_01', '97735020584', '_03', 'password-12345', false)
 ON CONFLICT (abi) DO NOTHING;
 
 -- PSP AGID_02
-INSERT INTO atm_layer_reporting_schema.cbill_abi_federazione (abi, pagopa_id, psp_fiscal_code, psp_channel, pagopa_direct)
-VALUES ('12346', 'AGID_02', '97735020584', '_05', false)
+INSERT INTO atm_layer_reporting_schema.cbill_abi_federazione (abi, pagopa_id, psp_fiscal_code, psp_channel, password, pagopa_direct)
+VALUES ('12346', 'AGID_02', '97735020584', '_05', 'password-12346', false)
 ON CONFLICT (abi) DO NOTHING;
 
 -- ===================================================================

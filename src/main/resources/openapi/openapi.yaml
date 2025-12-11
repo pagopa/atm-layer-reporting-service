@@ -16,6 +16,7 @@ components:
       - pagopaId
       - pspFiscalCode
       - pspChannel
+      - password
       properties:
         abi:
           type: string
@@ -29,6 +30,9 @@ components:
         pspChannel:
           type: string
           maxLength: 5
+        password:
+          type: string
+          maxLength: 255
         pagopaDirect:
           type: boolean
     ErrorResponseDto:
