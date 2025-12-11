@@ -20,6 +20,10 @@ public class CbillAbiFederazioneDto {
     @Size(max = 5)
     public String pspChannel;
 
+    @NotNull
+    @Size(max = 255)
+    public String password;
+
     public Boolean pagopaDirect;
 
     public CbillAbiFederazioneDto() {
