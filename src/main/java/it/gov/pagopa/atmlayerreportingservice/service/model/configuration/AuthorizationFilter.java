@@ -3,6 +3,7 @@ package it.gov.pagopa.atmlayerreportingservice.service.model.configuration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
@@ -52,7 +53,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         String apiKey = requestContext.getHeaders().get("x-api-key") != null ? String.valueOf(requestContext.getHeaders().get("x-api-key").getFirst()) : null;
 
         if (clientId !=null && !clientId.equals(apiKey)) {
-            throw new RuntimeException("Client ID does not match API Key");
+            throw new WebApplicationException("{\"message\":\"Client ID does not match API Key\"}", 401);
         }
     }
 }
