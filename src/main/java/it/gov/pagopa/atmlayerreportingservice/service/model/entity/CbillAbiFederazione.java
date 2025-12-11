@@ -25,6 +25,9 @@ public class CbillAbiFederazione extends PanacheEntityBase implements Serializab
     @Column(name = "PSP_CHANNEL", length = 5, nullable = false)
     public String pspChannel;
 
+    @Column(name = "PASSWORD", length = 255, nullable = false)
+    public String password;
+
     @Column(name = "PAGOPA_DIRECT")
     public Boolean pagopaDirect;
 
