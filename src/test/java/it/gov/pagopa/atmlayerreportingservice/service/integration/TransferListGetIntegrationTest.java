@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.*;
 class TransferListGetIntegrationTest {
 
     private static final String BASE_PATH = "/api/v1/reporting-service";
-    private static final String TRANSFER_LISTS_ENDPOINT = BASE_PATH + "/transfer-lists";
+    private static final String TRANSFER_LISTS_ENDPOINT = BASE_PATH + "/bank/transfer-lists";
 
     // Sender bank values matching ABI from V90__test_data_rendicontazione.sql
     private static final String SENDER_BANK_AGID_01 = "12345";  // ABI for AGID_01

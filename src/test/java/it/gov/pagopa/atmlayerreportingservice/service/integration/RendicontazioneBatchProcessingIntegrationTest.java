@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.*;
 class RendicontazioneBatchProcessingIntegrationTest {
 
     private static final String BASE_PATH = "/api/v1/reporting-service";
-    private static final String TRANSFER_LISTS_ENDPOINT = BASE_PATH + "/transfer-lists";
+    private static final String TRANSFER_LISTS_ENDPOINT = BASE_PATH + "/bank/transfer-lists";
     private static final String TRANSACTIONS_ENDPOINT = BASE_PATH + "/transactions";
 
     // SENDER_BANK values match ABI from CBILL_ABI_FEDERAZIONE table

@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.*;
 class RendicontazioneSoapIntegrationTest {
 
     private static final String BASE_PATH = "/api/v1/reporting-service";
-    private static final String TRANSFER_LISTS_ENDPOINT = BASE_PATH + "/transfer-lists";
+    private static final String TRANSFER_LISTS_ENDPOINT = BASE_PATH + "/bank/transfer-lists";
 
     // PSP AGID_01 Configuration
     private static final String PSP_ID_AGID_01 = "AGID_01";
