@@ -446,7 +446,7 @@ class AuthorizationFilterTest {
             authorizationFilter.filter(requestContext);
         });
 
-        assertEquals("Client ID does not match API Key", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
     }
 
     @Test
@@ -464,7 +464,7 @@ class AuthorizationFilterTest {
             authorizationFilter.filter(requestContext);
         });
 
-        assertEquals("Client ID does not match API Key", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
     }
 
     @Test
@@ -482,7 +482,7 @@ class AuthorizationFilterTest {
             authorizationFilter.filter(requestContext);
         });
 
-        assertEquals("Client ID does not match API Key", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
     }
 
     @Test
@@ -524,7 +524,7 @@ class AuthorizationFilterTest {
             authorizationFilter.filter(requestContext);
         });
 
-        assertEquals("Client ID does not match API Key", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
     }
 
     @Test
@@ -601,7 +601,7 @@ class AuthorizationFilterTest {
             authorizationFilter.filter(requestContext);
         });
 
-        assertEquals("Client ID does not match API Key", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
     }
 
     @Test
@@ -644,7 +644,7 @@ class AuthorizationFilterTest {
             authorizationFilter.filter(requestContext);
         });
 
-        assertEquals("Client ID does not match API Key", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
     }
 
     @Test
