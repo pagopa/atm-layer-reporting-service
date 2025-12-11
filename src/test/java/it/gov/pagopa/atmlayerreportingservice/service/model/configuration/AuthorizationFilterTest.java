@@ -1,6 +1,7 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.quarkus.test.junit.QuarkusTest;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -17,6 +18,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@QuarkusTest
 @DisplayName("AuthorizationFilter Tests")
 class AuthorizationFilterTest {
 
@@ -32,7 +34,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("extractTokenMiddlePart should extract middle part of valid token")
     void testExtractTokenMiddlePartValid() {
         String token = "header.payload.signature";
         String result = authorizationFilter.extractTokenMiddlePart(token);
@@ -40,7 +41,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("extractTokenMiddlePart should throw exception for invalid token format")
     void testExtractTokenMiddlePartInvalid() {
         String token = "header.payload";
         assertThrows(IllegalArgumentException.class, () -> {
@@ -49,7 +49,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("extractTokenMiddlePart should throw exception for token with more than 3 parts")
     void testExtractTokenMiddlePartTooManyParts() {
         String token = "header.payload.signature.extra";
         assertThrows(IllegalArgumentException.class, () -> {
@@ -58,7 +57,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("extractTokenMiddlePart should throw exception for token with only 1 part")
     void testExtractTokenMiddlePartOnePart() {
         String token = "onlyheader";
         assertThrows(IllegalArgumentException.class, () -> {
@@ -67,7 +65,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("extractTokenMiddlePart should throw exception for token with only dots")
     void testExtractTokenMiddlePartEmptyParts() {
         String token = "..";
         assertThrows(IllegalArgumentException.class, () -> {
@@ -76,16 +73,15 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("extractTokenMiddlePart should successfully parse valid JWT")
     void testExtractTokenMiddlePartValidJWT() {
         String validJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
         String result = authorizationFilter.extractTokenMiddlePart(validJWT);
         assertNotNull(result);
         assertFalse(result.isEmpty());
+        assertEquals("eyJzdWIiOiIxMjM0NTY3ODkwIn0", result);
     }
 
     @Test
-    @DisplayName("extractTokenMiddlePart should handle large token")
     void testExtractTokenMiddlePartLargeToken() {
         StringBuilder largePayload = new StringBuilder();
         for (int i = 0; i < 1000; i++) {
@@ -97,7 +93,29 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should parse valid base64 encoded JSON")
+    void testExtractTokenMiddlePartZeroParts() {
+        String token = "";
+        assertThrows(IllegalArgumentException.class, () -> {
+            authorizationFilter.extractTokenMiddlePart(token);
+        });
+    }
+
+    @Test
+    void testExtractTokenMiddlePartEmptyString() {
+        String token = ".";
+        assertThrows(IllegalArgumentException.class, () -> {
+            authorizationFilter.extractTokenMiddlePart(token);
+        });
+    }
+
+    @Test
+    void testExtractTokenMiddlePartEmptyPayload() {
+        String token = "a..c";
+        String result = authorizationFilter.extractTokenMiddlePart(token);
+        assertEquals("", result);
+    }
+
+    @Test
     void testGetPayloadValid() {
         String jsonString = "{\"client_id\": \"test-client\", \"sub\": \"user123\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -110,7 +128,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should throw exception for invalid base64")
     void testGetPayloadInvalidBase64() {
         String invalidBase64 = "!!!invalid!!!";
         assertThrows(IllegalArgumentException.class, () -> {
@@ -119,7 +136,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should throw exception for invalid JSON")
     void testGetPayloadInvalidJson() {
         String invalidJson = "not a json at all";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(invalidJson.getBytes());
@@ -130,7 +146,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should handle complex JSON structures")
     void testGetPayloadComplexJson() {
         String jsonString = "{\"client_id\": \"test\", \"nested\": {\"key\": \"value\"}, \"array\": [1, 2, 3]}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -144,7 +159,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should return JsonNode with null client_id if not present")
     void testGetPayloadMissingClientId() {
         String jsonString = "{\"sub\": \"user123\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -156,7 +170,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should handle special characters in base64")
     void testGetPayloadWithSpecialCharacters() {
         String jsonString = "{\"client_id\": \"test-123_abc\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -168,7 +181,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should handle numeric values in JSON")
     void testGetPayloadWithNumericValues() {
         String jsonString = "{\"client_id\": \"test\", \"code\": 200, \"timeout\": 3.5}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -182,7 +194,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getPayload should decode multiple properties correctly")
     void testGetPayloadMultipleProperties() {
         String jsonString = "{\"client_id\": \"test\", \"scope\": \"read write\", \"exp\": 1234567890}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -197,7 +208,72 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getClientId should extract client_id from valid authorization header")
+    void testGetPayloadEmptyJson() {
+        String jsonString = "{}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+
+        JsonNode result = authorizationFilter.getPayload(encodedPayload);
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void testGetPayloadNullClientId() {
+        String jsonString = "{\"client_id\": null}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+
+        JsonNode result = authorizationFilter.getPayload(encodedPayload);
+
+        assertNotNull(result);
+        assertTrue(result.get("client_id").isNull());
+    }
+
+    @Test
+    void testGetPayloadArray() {
+        String jsonString = "[1, 2, 3]";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+
+        JsonNode result = authorizationFilter.getPayload(encodedPayload);
+
+        assertNotNull(result);
+        assertTrue(result.isArray());
+    }
+
+    @Test
+    void testGetPayloadString() {
+        String jsonString = "\"just a string\"";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+
+        JsonNode result = authorizationFilter.getPayload(encodedPayload);
+
+        assertNotNull(result);
+        assertTrue(result.isTextual());
+    }
+
+    @Test
+    void testGetPayloadNumber() {
+        String jsonString = "123";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+
+        JsonNode result = authorizationFilter.getPayload(encodedPayload);
+
+        assertNotNull(result);
+        assertTrue(result.isNumber());
+    }
+
+    @Test
+    void testGetPayloadBoolean() {
+        String jsonString = "true";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+
+        JsonNode result = authorizationFilter.getPayload(encodedPayload);
+
+        assertNotNull(result);
+        assertTrue(result.isBoolean());
+    }
+
+    @Test
     void testGetClientIdValid() {
         String jsonString = "{\"client_id\": \"my-client-id\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -211,7 +287,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getClientId should return null when Authorization header is null")
     void testGetClientIdNullHeader() {
         when(requestContext.getHeaderString("Authorization")).thenReturn(null);
 
@@ -221,7 +296,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getClientId should return null when Authorization header is empty")
     void testGetClientIdEmptyHeader() {
         when(requestContext.getHeaderString("Authorization")).thenReturn("");
 
@@ -231,7 +305,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getClientId should extract client_id even with whitespace in header")
     void testGetClientIdWithWhitespace() {
         String jsonString = "{\"client_id\": \"whitespace-client\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -245,7 +318,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("getClientId should handle token with spaces in middle part")
     void testGetClientIdWithSpacesInPayload() {
         String jsonString = "{\"client_id\": \"test client\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -259,7 +331,58 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should pass when clientId is null and apiKey is null")
+    void testGetClientIdEmptyClientId() {
+        String jsonString = "{\"client_id\": \"\"}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "header." + encodedPayload + ".signature";
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+
+        String result = authorizationFilter.getClientId(requestContext);
+
+        assertEquals("", result);
+    }
+
+    @Test
+    void testGetClientIdNullClientId() {
+        String jsonString = "{\"client_id\": null}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "header." + encodedPayload + ".signature";
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+
+        String result = authorizationFilter.getClientId(requestContext);
+
+        assertEquals("null", result);
+    }
+
+    @Test
+    void testGetClientIdWithNumericId() {
+        String jsonString = "{\"client_id\": \"12345\"}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "header." + encodedPayload + ".signature";
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+
+        String result = authorizationFilter.getClientId(requestContext);
+
+        assertEquals("12345", result);
+    }
+
+    @Test
+    void testGetClientIdWithSpecialCharacters() {
+        String jsonString = "{\"client_id\": \"client@domain.com\"}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "header." + encodedPayload + ".signature";
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+
+        String result = authorizationFilter.getClientId(requestContext);
+
+        assertEquals("client@domain.com", result);
+    }
+
+    @Test
     void testFilterBothNull() {
         MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
 
@@ -272,7 +395,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should pass when clientId is null and apiKey is present")
     void testFilterClientIdNullApiKeyPresent() {
         MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
         List<String> apiKeyList = new ArrayList<>();
@@ -288,7 +410,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should pass when clientId matches apiKey")
     void testFilterMatch() {
         String jsonString = "{\"client_id\": \"matching-id\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -308,27 +429,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should pass when clientId matches apiKey with numeric characters")
-    void testFilterClientIdNumeric() {
-        String jsonString = "{\"client_id\": \"client123\"}";
-        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
-        String token = "header." + encodedPayload + ".signature";
-
-        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
-        List<String> apiKeyList = new ArrayList<>();
-        apiKeyList.add("client123");
-        headers.put("x-api-key", apiKeyList);
-
-        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
-        when(requestContext.getHeaders()).thenReturn(headers);
-
-        assertDoesNotThrow(() -> {
-            authorizationFilter.filter(requestContext);
-        });
-    }
-
-    @Test
-    @DisplayName("filter should throw exception when clientId does not match apiKey")
     void testFilterMismatch() {
         String jsonString = "{\"client_id\": \"client-123\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -350,7 +450,6 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should throw exception when clientId present but apiKey is null")
     void testFilterClientIdPresentApiKeyNull() {
         String jsonString = "{\"client_id\": \"client-id\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -369,8 +468,7 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should throw exception when clientId is empty string and apiKey is null")
-    void testFilterClientIdEmptyString() {
+    void testFilterEmptyClientIdWithNull() {
         String jsonString = "{\"client_id\": \"\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
         String token = "header." + encodedPayload + ".signature";
@@ -388,8 +486,7 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should handle multiple API keys and use first")
-    void testFilterMultipleApiKeys() {
+    void testFilterMultipleApiKeysMatch() {
         String jsonString = "{\"client_id\": \"matching-id\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
         String token = "header." + encodedPayload + ".signature";
@@ -409,8 +506,7 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should throw exception when clientId does not match first apiKey")
-    void testFilterMismatchFirstApiKey() {
+    void testFilterMultipleApiKeysMismatch() {
         String jsonString = "{\"client_id\": \"client-id\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
         String token = "header." + encodedPayload + ".signature";
@@ -432,7 +528,24 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should pass when token has Bearer prefix and clientId matches")
+    void testFilterEmptyApiKeyList() {
+        String jsonString = "{\"client_id\": \"client-id\"}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "header." + encodedPayload + ".signature";
+
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+        List<String> emptyList = new ArrayList<>();
+        headers.put("x-api-key", emptyList);
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+        when(requestContext.getHeaders()).thenReturn(headers);
+
+        assertThrows(Exception.class, () -> {
+            authorizationFilter.filter(requestContext);
+        });
+    }
+
+    @Test
     void testFilterWithBearerPrefix() {
         String jsonString = "{\"client_id\": \"bearer-client\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -452,45 +565,25 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("filter should pass with empty apiKey list")
-    void testFilterEmptyApiKeyList() {
-        String jsonString = "{\"client_id\": \"client-id\"}";
+    void testFilterClientIdNumeric() {
+        String jsonString = "{\"client_id\": \"client123\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
         String token = "header." + encodedPayload + ".signature";
 
         MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
-        List<String> emptyList = new ArrayList<>();
-        headers.put("x-api-key", emptyList);
+        List<String> apiKeyList = new ArrayList<>();
+        apiKeyList.add("client123");
+        headers.put("x-api-key", apiKeyList);
 
         when(requestContext.getHeaderString("Authorization")).thenReturn(token);
         when(requestContext.getHeaders()).thenReturn(headers);
 
-        assertThrows(RuntimeException.class, () -> {
+        assertDoesNotThrow(() -> {
             authorizationFilter.filter(requestContext);
         });
     }
 
     @Test
-    @DisplayName("filter should throw exception when clientId present and apiKey header missing")
-    void testFilterClientIdPresentApiKeyMissing() {
-        String jsonString = "{\"client_id\": \"client-id\"}";
-        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
-        String token = "header." + encodedPayload + ".signature";
-
-        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
-
-        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
-        when(requestContext.getHeaders()).thenReturn(headers);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            authorizationFilter.filter(requestContext);
-        });
-
-        assertEquals("Client ID does not match API Key", exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("filter should throw exception when clientId does not match with special characters")
     void testFilterMismatchWithSpecialChars() {
         String jsonString = "{\"client_id\": \"client@domain.com\"}";
         String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
@@ -509,6 +602,87 @@ class AuthorizationFilterTest {
         });
 
         assertEquals("Client ID does not match API Key", exception.getMessage());
+    }
+
+    @Test
+    void testFilterNullClientIdNullApiKey() {
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(null);
+        when(requestContext.getHeaders()).thenReturn(headers);
+
+        assertDoesNotThrow(() -> {
+            authorizationFilter.filter(requestContext);
+        });
+
+        verify(requestContext, times(1)).getHeaderString("Authorization");
+        verify(requestContext, times(1)).getHeaders();
+    }
+
+    @Test
+    void testFilterHeadersGetReturnsNull() {
+        when(requestContext.getHeaderString("Authorization")).thenReturn(null);
+        when(requestContext.getHeaders()).thenReturn(null);
+
+        assertThrows(NullPointerException.class, () -> {
+            authorizationFilter.filter(requestContext);
+        });
+    }
+
+    @Test
+    void testFilterXApiKeyHeaderGetReturnsNull() {
+        String jsonString = "{\"client_id\": \"test-id\"}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "header." + encodedPayload + ".signature";
+
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+        when(requestContext.getHeaders()).thenReturn(headers);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            authorizationFilter.filter(requestContext);
+        });
+
+        assertEquals("Client ID does not match API Key", exception.getMessage());
+    }
+
+    @Test
+    void testFilterClientIdEqualsApiKey() {
+        String jsonString = "{\"client_id\": \"test-key\"}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "header." + encodedPayload + ".signature";
+
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+        List<String> apiKeyList = new ArrayList<>();
+        apiKeyList.add("test-key");
+        headers.put("x-api-key", apiKeyList);
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+        when(requestContext.getHeaders()).thenReturn(headers);
+
+        assertDoesNotThrow(() -> {
+            authorizationFilter.filter(requestContext);
+        });
+    }
+
+    @Test
+    void testFilterAllConditions() {
+        String jsonString = "{\"client_id\": \"valid\"}";
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(jsonString.getBytes());
+        String token = "h." + encodedPayload + ".s";
+
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+        List<String> apiKeyList = new ArrayList<>();
+        apiKeyList.add("valid");
+        headers.put("x-api-key", apiKeyList);
+
+        when(requestContext.getHeaderString("Authorization")).thenReturn(token);
+        when(requestContext.getHeaders()).thenReturn(headers);
+
+        assertDoesNotThrow(() -> {
+            authorizationFilter.filter(requestContext);
+        });
     }
 }
 

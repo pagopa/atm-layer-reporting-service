@@ -119,7 +119,6 @@ class PagopaReconciliationServiceIntegrationTest {
             transferListService, transactionsService, cbillAbiFederazioneService
         );
 
-        setField(service, "pagoPaPassword", "test-password");
         setField(service, "pagoPaSubscriptionKey", expectedSubscription);
         setField(service, "pagoPaConnectionTimeout", 5000L);
         setField(service, "pagoPaReadTimeout", 5000L);
@@ -192,7 +191,6 @@ class PagopaReconciliationServiceIntegrationTest {
             transferListService, transactionsService, cbillAbiFederazioneService
         );
 
-        setField(service, "pagoPaPassword", "test-password");
         setField(service, "pagoPaSubscriptionKey", "test-sub");
         setField(service, "pagoPaConnectionTimeout", 5000L);
         setField(service, "pagoPaReadTimeout", 5000L);
@@ -251,7 +249,6 @@ class PagopaReconciliationServiceIntegrationTest {
             transferListService, transactionsService, cbillAbiFederazioneService
         );
 
-        setField(service, "pagoPaPassword", password);
         setField(service, "pagoPaSubscriptionKey", subscriptionKey);
         setField(service, "pagoPaConnectionTimeout", 30000L);
         setField(service, "pagoPaReadTimeout", 30000L);
