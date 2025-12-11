@@ -17,7 +17,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 secretProviderClass:
-  enabled: false
+  enabled: true
   name: atm-layer-reporting-service-secrets
   env: prod
 
@@ -39,7 +39,11 @@ database:
 #   endpointBasePath: "http://jaeger-collector.default.svc.cluster.local:4317"
 #   enableJDBCMonitoring: "true"
 
-# reportingService:
+reportingService:
+  credentialsSecretEnabled: true
+  credentialsSecretName: "pagopa-prod-atm-layer-reporting-service-node"
+  credentialsSecretKeys:
+    api_key: PAGOPA_API_SUBSCRIPTION_KEY
 #   environment: prod
 #   executionMode: READ_WRITE
 #   logLevel: INFO

@@ -17,7 +17,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 secretProviderClass:
-  enabled: false
+  enabled: true
   name: atm-layer-reporting-service-secrets
   env: uat
 
@@ -39,7 +39,11 @@ database:
 #   endpointBasePath: "http://jeager-manual-trace-ecs-priv-b19cfd091be2d616.elb.eu-south-1.amazonaws.com:4317"
 #   enableJDBCMonitoring: "true"
 
-# reportingService:
+reportingService:
+  credentialsSecretEnabled: true
+  credentialsSecretName: "pagopa-uat-atm-layer-reporting-service-node"
+  credentialsSecretKeys:
+    api_key: PAGOPA_API_SUBSCRIPTION_KEY
 #   environment: uat
 #   executionMode: READ_WRITE
 #   logLevel: INFO
