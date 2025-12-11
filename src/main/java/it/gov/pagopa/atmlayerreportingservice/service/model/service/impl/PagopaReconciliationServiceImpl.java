@@ -63,9 +63,6 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
     @ConfigProperty(name = "pagopa.rendicontazione.url", defaultValue = "")
     String pagoPaUrl;
 
-    @ConfigProperty(name = "pagopa.rendicontazione.password", defaultValue = "")
-    String pagoPaPassword;
-
     @ConfigProperty(name = "pagopa.rendicontazione.subscription-key", defaultValue = "")
     String pagoPaSubscriptionKey;
 
@@ -298,7 +295,7 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
                 "<identificativoPSP>" + identificativoPSP + "</identificativoPSP>" +
                 "<identificativoIntermediarioPSP>" + identificativoIntermediarioPSP + "</identificativoIntermediarioPSP>" +
                 "<identificativoCanale>" + identificativoCanale + "</identificativoCanale>" +
-                "<password>" + safeString(pagoPaPassword) + "</password>" +
+                "<password>" + safeString(config.password) + "</password>" +
                 "<identificativoDominio>" + identificativoDominio + "</identificativoDominio>" +
                 "<identificativoFlusso>" + safeString(flow.getIdentificativoFlusso()) + "</identificativoFlusso>" +
                 "<dataOraFlusso>" + dataOraFlusso + "</dataOraFlusso>" +
