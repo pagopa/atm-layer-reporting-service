@@ -17,7 +17,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     private final String HEADER_AUTHORIZATION = "Authorization";
     private final String CLAIM_CLIENT_ID = "client_id";
 
-    private String extractTokenMiddlePart(String token) {
+    String extractTokenMiddlePart(String token) {
         String[] parts = token.split("\\.");
         if (parts.length != 3) {
             throw new IllegalArgumentException("Invalid token format");
@@ -25,7 +25,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         return parts[1];
     }
 
-    private JsonNode getPayload(String base64String) {
+    JsonNode getPayload(String base64String) {
         String payload = new String(Base64.getUrlDecoder().decode(base64String));
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = null;
@@ -37,7 +37,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         return rootNode;
     }
 
-    private String getClientId(ContainerRequestContext containerRequestContext) {
+    String getClientId(ContainerRequestContext containerRequestContext) {
         String authorization = containerRequestContext.getHeaderString(HEADER_AUTHORIZATION);
         if ( authorization != null && !authorization.isEmpty()) {
             String middlePart = extractTokenMiddlePart(authorization);
