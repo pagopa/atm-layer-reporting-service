@@ -46,6 +46,13 @@ spec:
               value: "{{ .Values.database.jdbc_url }}"
             - name: REPORTING_DB_REACTIVE_URL
               value: "{{ .Values.database.reactive_url }}"
+              {{- if .Values.reportingService.credentialsSecretEnabled }}
+            - name: PAGOPA_API_SUBSCRIPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.reportingService.credentialsSecretName }}
+                  key: {{ .Values.reportingService.credentialsSecretKeys.api_key }}
+                  {{- end }}
               {{- if .Values.database.credentialsSecretEnabled }}
             - name: REPORTING_DB_USERNAME
               valueFrom:
