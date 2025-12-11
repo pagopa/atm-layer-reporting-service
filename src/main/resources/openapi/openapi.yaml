@@ -16,6 +16,7 @@ components:
       - pagopaId
       - pspFiscalCode
       - pspChannel
+      - password
       properties:
         abi:
           type: string
@@ -29,6 +30,9 @@ components:
         pspChannel:
           type: string
           maxLength: 5
+        password:
+          type: string
+          maxLength: 255
         pagopaDirect:
           type: boolean
     ErrorResponseDto:
@@ -443,7 +447,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponseDto"
 info:
   title: atmlayerreportingservice (DEV)
-  version: 1.0.0-dev.2
+  version: 1.0.0-dev.3
   description: "API per consultazione, aggiornamento e rendicontazione dei pagamenti\
     \ PagoPA"
   termsOfService: https://www.pagopa.gov.it/
