@@ -21,7 +21,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     String extractTokenMiddlePart(String token) {
         String[] parts = token.split("\\.");
         if (parts.length != 3) {
-            throw new IllegalArgumentException("Invalid token format");
+            throw new WebApplicationException("{\"message\":\"Invalid token format\"}", 400);
         }
         return parts[1];
     }

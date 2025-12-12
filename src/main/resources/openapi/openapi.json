@@ -257,6 +257,187 @@
     }
   },
   "paths" : {
+    "/api/v1/reporting-service/bank/transfer-lists" : {
+      "put" : {
+        "summary" : "Aggiorna un elemento di trasferimento esistente",
+        "operationId" : "updatePagopaTransferList",
+        "tags" : [ "PagopaTransferList" ],
+        "parameters" : [ {
+          "name" : "SenderBank",
+          "in" : "header",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PagopaTransferListUpdateDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Elemento di trasferimento aggiornato",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagopaTransferListDto"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Richiesta non valida",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Risorsa non trovata",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get" : {
+        "summary" : "Lista degli elementi di trasferimento filtrata per banca",
+        "operationId" : "listPagopaTransferLists",
+        "tags" : [ "PagopaTransferList" ],
+        "parameters" : [ {
+          "name" : "SenderBank",
+          "in" : "header",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Operazione eseguita con successo",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PagopaTransferListDto"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Richiesta non valida",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Creazione di un elemento di trasferimento",
+        "operationId" : "createPagopaTransferList",
+        "tags" : [ "PagopaTransferList" ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PagopaTransferListDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Elemento di trasferimento persistito",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagopaTransferListDto"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Richiesta non valida",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reporting-service/bank/transfer-lists/transaction/{transactionId}" : {
+      "get" : {
+        "summary" : "Lista di trasferimenti per transazione",
+        "operationId" : "listPagopaTransferListsByTransactionId",
+        "tags" : [ "PagopaTransferList" ],
+        "parameters" : [ {
+          "name" : "transactionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Operazione eseguita con successo",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PagopaTransferListDto"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Richiesta non valida",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Risorsa non trovata",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/reporting-service/cbill-abi-federazione" : {
       "get" : {
         "summary" : "Lista delle federazioni ABI CBILL",
@@ -404,192 +585,11 @@
           }
         }
       }
-    },
-    "/api/v1/reporting-service/transfer-lists" : {
-      "put" : {
-        "summary" : "Aggiorna un elemento di trasferimento esistente",
-        "operationId" : "updatePagopaTransferList",
-        "tags" : [ "PagopaTransferList" ],
-        "parameters" : [ {
-          "name" : "SenderBank",
-          "in" : "header",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PagopaTransferListUpdateDto"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Elemento di trasferimento aggiornato",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PagopaTransferListDto"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Richiesta non valida",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Risorsa non trovata",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get" : {
-        "summary" : "Lista degli elementi di trasferimento filtrata per banca",
-        "operationId" : "listPagopaTransferLists",
-        "tags" : [ "PagopaTransferList" ],
-        "parameters" : [ {
-          "name" : "SenderBank",
-          "in" : "header",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Operazione eseguita con successo",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/PagopaTransferListDto"
-                  }
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Richiesta non valida",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post" : {
-        "summary" : "Creazione di un elemento di trasferimento",
-        "operationId" : "createPagopaTransferList",
-        "tags" : [ "PagopaTransferList" ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PagopaTransferListDto"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Elemento di trasferimento persistito",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PagopaTransferListDto"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Richiesta non valida",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/reporting-service/transfer-lists/transaction/{transactionId}" : {
-      "get" : {
-        "summary" : "Lista di trasferimenti per transazione",
-        "operationId" : "listPagopaTransferListsByTransactionId",
-        "tags" : [ "PagopaTransferList" ],
-        "parameters" : [ {
-          "name" : "transactionId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Operazione eseguita con successo",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/PagopaTransferListDto"
-                  }
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Richiesta non valida",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Risorsa non trovata",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "info" : {
     "title" : "atmlayerreportingservice (DEV)",
-    "version" : "1.0.0-dev.3",
+    "version" : "1.0.0-dev.4",
     "description" : "API per consultazione, aggiornamento e rendicontazione dei pagamenti PagoPA",
     "termsOfService" : "https://www.pagopa.gov.it/",
     "contact" : {
