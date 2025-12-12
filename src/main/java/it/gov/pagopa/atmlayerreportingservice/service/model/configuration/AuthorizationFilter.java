@@ -7,9 +7,11 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import java.util.Base64;
+import java.util.Map;
 
 @Provider
 @PreMatching
@@ -18,10 +20,13 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     private final String HEADER_AUTHORIZATION = "Authorization";
     private final String CLAIM_CLIENT_ID = "client_id";
 
+
     String extractTokenMiddlePart(String token) {
         String[] parts = token.split("\\.");
         if (parts.length != 3) {
-            throw new WebApplicationException("{\"message\":\"Invalid token format\"}", 400);
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST).entity(Map.of("message", "Invalid token format")).build()
+            );
         }
         return parts[1];
     }
@@ -53,7 +58,9 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         String apiKey = requestContext.getHeaders().get("x-api-key") != null ? String.valueOf(requestContext.getHeaders().get("x-api-key").getFirst()) : null;
 
         if (clientId !=null && !clientId.equals(apiKey)) {
-            throw new WebApplicationException("{\"message\":\"Client ID does not match API Key\"}", 401);
+            throw new WebApplicationException(
+                    Response.status(Response.Status.UNAUTHORIZED).entity(Map.of("message", "Client ID does not match API key")).build()
+            );
         }
     }
 }

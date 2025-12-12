@@ -2,6 +2,7 @@ package it.gov.pagopa.atmlayerreportingservice.service.model.configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -11,9 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -43,33 +42,49 @@ class AuthorizationFilterTest {
     @Test
     void testExtractTokenMiddlePartInvalid() {
         String token = "header.payload";
-        assertThrows(IllegalArgumentException.class, () -> {
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.extractTokenMiddlePart(token);
         });
+        assertEquals(400, ex.getResponse().getStatus());
+        Map entity = (Map) ex.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals("Invalid token format", entity.get("message"));
     }
 
     @Test
     void testExtractTokenMiddlePartTooManyParts() {
         String token = "header.payload.signature.extra";
-        assertThrows(IllegalArgumentException.class, () -> {
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.extractTokenMiddlePart(token);
         });
+        assertEquals(400, ex.getResponse().getStatus());
+        Map entity = (Map) ex.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals("Invalid token format", entity.get("message"));
     }
 
     @Test
     void testExtractTokenMiddlePartOnePart() {
         String token = "onlyheader";
-        assertThrows(IllegalArgumentException.class, () -> {
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.extractTokenMiddlePart(token);
         });
+        assertEquals(400, ex.getResponse().getStatus());
+        Map entity = (Map) ex.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals("Invalid token format", entity.get("message"));
     }
 
     @Test
     void testExtractTokenMiddlePartEmptyParts() {
         String token = "..";
-        assertThrows(IllegalArgumentException.class, () -> {
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.extractTokenMiddlePart(token);
         });
+        assertEquals(400, ex.getResponse().getStatus());
+        Map entity = (Map) ex.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals("Invalid token format", entity.get("message"));
     }
 
     @Test
@@ -95,17 +110,25 @@ class AuthorizationFilterTest {
     @Test
     void testExtractTokenMiddlePartZeroParts() {
         String token = "";
-        assertThrows(IllegalArgumentException.class, () -> {
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.extractTokenMiddlePart(token);
         });
+        assertEquals(400, ex.getResponse().getStatus());
+        Map entity = (Map) ex.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals("Invalid token format", entity.get("message"));
     }
 
     @Test
     void testExtractTokenMiddlePartEmptyString() {
         String token = ".";
-        assertThrows(IllegalArgumentException.class, () -> {
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.extractTokenMiddlePart(token);
         });
+        assertEquals(400, ex.getResponse().getStatus());
+        Map entity = (Map) ex.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals("Invalid token format", entity.get("message"));
     }
 
     @Test
@@ -442,11 +465,14 @@ class AuthorizationFilterTest {
         when(requestContext.getHeaderString("Authorization")).thenReturn(token);
         when(requestContext.getHeaders()).thenReturn(headers);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.filter(requestContext);
         });
 
-        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
+        Map entity = (Map) exception.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals(401, exception.getResponse().getStatus());
+        assertTrue("Client ID does not match API key".equalsIgnoreCase((String) entity.get("message")));
     }
 
     @Test
@@ -460,11 +486,14 @@ class AuthorizationFilterTest {
         when(requestContext.getHeaderString("Authorization")).thenReturn(token);
         when(requestContext.getHeaders()).thenReturn(headers);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.filter(requestContext);
         });
 
-        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
+        Map entity = (Map) exception.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals(401, exception.getResponse().getStatus());
+        assertTrue("Client ID does not match API key".equalsIgnoreCase((String) entity.get("message")));
     }
 
     @Test
@@ -478,11 +507,14 @@ class AuthorizationFilterTest {
         when(requestContext.getHeaderString("Authorization")).thenReturn(token);
         when(requestContext.getHeaders()).thenReturn(headers);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.filter(requestContext);
         });
 
-        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
+        Map entity = (Map) exception.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals(401, exception.getResponse().getStatus());
+        assertTrue("Client ID does not match API key".equalsIgnoreCase((String) entity.get("message")));
     }
 
     @Test
@@ -520,11 +552,14 @@ class AuthorizationFilterTest {
         when(requestContext.getHeaderString("Authorization")).thenReturn(token);
         when(requestContext.getHeaders()).thenReturn(headers);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.filter(requestContext);
         });
 
-        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
+        Map entity = (Map) exception.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals(401, exception.getResponse().getStatus());
+        assertTrue("Client ID does not match API key".equalsIgnoreCase((String) entity.get("message")));
     }
 
     @Test
@@ -597,11 +632,14 @@ class AuthorizationFilterTest {
         when(requestContext.getHeaderString("Authorization")).thenReturn(token);
         when(requestContext.getHeaders()).thenReturn(headers);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.filter(requestContext);
         });
 
-        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
+        Map entity = (Map) exception.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals(401, exception.getResponse().getStatus());
+        assertTrue("Client ID does not match API key".equalsIgnoreCase((String) entity.get("message")));
     }
 
     @Test
@@ -640,11 +678,14 @@ class AuthorizationFilterTest {
         when(requestContext.getHeaderString("Authorization")).thenReturn(token);
         when(requestContext.getHeaders()).thenReturn(headers);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             authorizationFilter.filter(requestContext);
         });
 
-        assertTrue(exception.getMessage().contains("Client ID does not match API Key"));
+        Map entity = (Map) exception.getResponse().getEntity();
+        assertInstanceOf(String.class, entity.get("message"));
+        assertEquals(401, exception.getResponse().getStatus());
+        assertTrue("Client ID does not match API key".equalsIgnoreCase((String) entity.get("message")));
     }
 
     @Test
