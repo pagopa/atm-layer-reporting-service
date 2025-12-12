@@ -1,6 +1,7 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
 import com.sun.net.httpserver.HttpServer;
+import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import it.gov.digitpa.schemas._2011.pagamenti.CtDatiSingoliPagamenti;
@@ -28,11 +29,15 @@ import java.time.ZoneId;
 import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test di integrazione per sendFlussoRiconciliazione.
@@ -43,7 +48,14 @@ import org.mockito.Mockito;
  * Specifiche SOAP: vedere docs/specifiche-soap.md
  * Endpoint UAT: https://api.uat.platform.pagopa.it/nodo-auth/node-for-psp/v1
  */
+@QuarkusTest
 class PagopaReconciliationServiceIntegrationTest {
+
+    @ConfigProperty(name = "pagopa.rendicontazione.url", defaultValue = "")
+    String uatEndpoint;
+
+    @ConfigProperty(name = "pagopa.rendicontazione.subscription-key", defaultValue = "")
+    String subscriptionKey;
 
     private HttpServer server;
 
@@ -77,11 +89,11 @@ class PagopaReconciliationServiceIntegrationTest {
                 String requestBody = baos.toString(StandardCharsets.UTF_8);
 
                 // Validazioni della richiesta
-                Assertions.assertTrue(
+                assertTrue(
                     requestBody.contains("nodoInviaFlussoRendicontazione"),
                     "Richiesta SOAP non contiene nodoInviaFlussoRendicontazione"
                 );
-                Assertions.assertTrue(
+                assertTrue(
                     requestBody.contains("xmlRendicontazione"),
                     "Richiesta SOAP non contiene xmlRendicontazione (base64)"
                 );
@@ -229,9 +241,6 @@ class PagopaReconciliationServiceIntegrationTest {
     @Test
     @EnabledIfEnvironmentVariable(named = "PAGOPA_TEST_ENABLED", matches = "true")
     void sendFlussoRiconciliazione_withRealUATEndpoint_shouldSucceedOrFailGracefully() throws Exception {
-        String subscriptionKey = System.getenv("PAGOPA_API_SUBSCRIPTION_KEY");
-        String password = System.getenv("PAGOPA_API_PASSWORD");
-        String uatEndpoint = System.getenv("PAGOPA_API_URL");
 
         if (uatEndpoint == null) {
             uatEndpoint = "https://api.uat.platform.pagopa.it/nodo-auth/node-for-psp/v1";
@@ -239,8 +248,6 @@ class PagopaReconciliationServiceIntegrationTest {
 
         Assertions.assertNotNull(subscriptionKey,
             "PAGOPA_API_SUBSCRIPTION_KEY non impostata");
-        Assertions.assertNotNull(password,
-            "PAGOPA_API_PASSWORD non impostata (necessaria per test UAT)");
 
         PagopaTransferListService transferListService = Mockito.mock(PagopaTransferListService.class);
         PagopaTransactionsService transactionsService = Mockito.mock(PagopaTransactionsService.class);
@@ -309,8 +316,148 @@ class PagopaReconciliationServiceIntegrationTest {
         subscriber.awaitItem(java.time.Duration.ofSeconds(35)).assertCompleted();
         Boolean result = subscriber.getItem();
 
-        System.out.println("✓ Test UAT completato. Esito: " + result);
+        System.out.println("Test KO UAT completato. Esito: " + result);
+        assertTrue(soapResponse.body().contains("<esito>KO</esito>"), "La risposta SOAP non contiene esito KO");
     }
+
+    /**
+     * Test di integrazione REALE con endpoint UAT di PagoPA.
+     * Utilizza i dati di test da esito_OK.xml per ottenere un esito OK.
+     */
+    @Test
+    @EnabledIfEnvironmentVariable(named = "PAGOPA_TEST_ENABLED", matches = "true")
+    void sendFlussoRiconciliazione_withRealUATEndpoint_shouldReturnOK() throws Exception {
+
+        if (uatEndpoint == null) {
+            uatEndpoint = "https://api.uat.platform.pagopa.it/nodo-auth/node-for-psp/v1";
+        }
+
+        Assertions.assertNotNull(subscriptionKey,
+                "PAGOPA_API_SUBSCRIPTION_KEY non impostata");
+
+        // Genera identificativoFlusso con data odierna
+        LocalDate today = LocalDate.now();
+        String datePrefix = String.format("%04d-%02d-%02d", today.getYear(), today.getMonthValue(), today.getDayOfMonth());
+        String identificativoFlusso = datePrefix + "88888888888-AABB648200001";
+
+        // Data e ora corrente per dataOraFlusso
+        Instant now = Instant.now();
+        XMLGregorianCalendar dataOraFlusso = toXmlDateTime(now);
+
+        // Costruisci FlussoRiversamento con dati da esito_OK.xml
+        CtFlussoRiversamento flow = new CtFlussoRiversamento();
+        flow.setVersioneOggetto("1.0");
+        flow.setIdentificativoFlusso(identificativoFlusso);
+        flow.setDataOraFlusso(dataOraFlusso);
+        flow.setIdentificativoUnivocoRegolamento("Bonifico SEPA-00000-AABB0");
+        flow.setDataRegolamento(toXmlDate(LocalDate.of(2021, 11, 21)));
+
+        // Mittente (da esito_OK.xml)
+        CtIstitutoMittente mittente = new CtIstitutoMittente();
+        CtIdentificativoUnivoco idMittente = new CtIdentificativoUnivoco();
+        idMittente.setTipoIdentificativoUnivoco(StTipoIdentificativoUnivoco.B);
+        idMittente.setCodiceIdentificativoUnivoco("ABI00000");
+        mittente.setIdentificativoUnivocoMittente(idMittente);
+        mittente.setDenominazioneMittente("BANCO DI XXXXXXXX SPA");
+        flow.setIstitutoMittente(mittente);
+
+        // Ricevente (da esito_OK.xml)
+        CtIstitutoRicevente ricevente = new CtIstitutoRicevente();
+        CtIdentificativoUnivocoPersonaG idRicevente = new CtIdentificativoUnivocoPersonaG();
+        idRicevente.setTipoIdentificativoUnivoco(StTipoIdentificativoUnivocoPersG.G);
+        idRicevente.setCodiceIdentificativoUnivoco("77777777777");
+        ricevente.setIdentificativoUnivocoRicevente(idRicevente);
+        ricevente.setDenominazioneRicevente("XXXXXXXXXXX");
+        flow.setIstitutoRicevente(ricevente);
+
+        // Dati pagamento (da esito_OK.xml)
+        flow.setNumeroTotalePagamenti(BigDecimal.ONE);
+        flow.setImportoTotalePagamenti(new BigDecimal("1234.56"));
+
+        CtDatiSingoliPagamenti pagamento = new CtDatiSingoliPagamenti();
+        pagamento.setIdentificativoUnivocoVersamento("12210209926737900");
+        pagamento.setIdentificativoUnivocoRiscossione("2130101502302932577");
+        pagamento.setIndiceDatiSingoloPagamento(1);
+        pagamento.setSingoloImportoPagato(new BigDecimal("1234.56"));
+        pagamento.setCodiceEsitoSingoloPagamento("0");
+        pagamento.setDataEsitoSingoloPagamento(toXmlDate(LocalDate.of(2021, 11, 21)));
+        flow.getDatiSingoliPagamenti().add(pagamento);
+
+        // Configurazione PSP (da esito_OK.xml)
+        CbillAbiFederazione config = new CbillAbiFederazione();
+        config.pagopaId = "88888888888";
+        config.pspFiscalCode = "88888888888";
+        config.pspChannel = "_01";
+
+
+
+        // Crea service e configura
+        PagopaTransferListService transferListService = Mockito.mock(PagopaTransferListService.class);
+        PagopaTransactionsService transactionsService = Mockito.mock(PagopaTransactionsService.class);
+        CbillAbiFederazioneService cbillAbiFederazioneService = Mockito.mock(CbillAbiFederazioneService.class);
+        PagopaReconciliationServiceImpl service = new PagopaReconciliationServiceImpl(
+                transferListService, transactionsService, cbillAbiFederazioneService
+        );
+
+        setField(service, "pagoPaSubscriptionKey", subscriptionKey);
+        setField(service, "pagoPaConnectionTimeout", 30000L);
+        setField(service, "pagoPaReadTimeout", 30000L);
+        setField(service, "pagoPaUrl", uatEndpoint);
+
+        // Marshal e encode in Base64
+        Method marshalFlowMethod = PagopaReconciliationServiceImpl.class.getDeclaredMethod(
+                "marshalFlow", CtFlussoRiversamento.class
+        );
+        marshalFlowMethod.setAccessible(true);
+        String xmlFlow = (String) marshalFlowMethod.invoke(service, flow);
+        String encodedXml = java.util.Base64.getEncoder().encodeToString(xmlFlow.getBytes(StandardCharsets.UTF_8));
+
+        // Costruisci SOAP envelope
+        Method buildSoapMethod = PagopaReconciliationServiceImpl.class.getDeclaredMethod(
+                "buildSoapEnvelope", CbillAbiFederazione.class, CtFlussoRiversamento.class, String.class
+        );
+        buildSoapMethod.setAccessible(true);
+        String soapRequest = (String) buildSoapMethod.invoke(service, config, flow, encodedXml);
+
+        System.out.println("\n========== RICHIESTA SOAP (esito OK) ==========");
+        System.out.println(soapRequest);
+        System.out.println("================================================\n");
+
+        // Invoca sendFlussoRiconciliazione
+        Method sendFlussoMethod = PagopaReconciliationServiceImpl.class.getDeclaredMethod(
+                "sendFlussoRiconciliazione", CbillAbiFederazione.class, CtFlussoRiversamento.class
+        );
+        sendFlussoMethod.setAccessible(true);
+
+        java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofMillis(30000L))
+                .build();
+        java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(uatEndpoint))
+                .timeout(java.time.Duration.ofMillis(30000L))
+                .header("Content-Type", "text/xml; charset=UTF-8")
+                .header("Ocp-Apim-Subscription-Key", subscriptionKey)
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(soapRequest))
+                .build();
+
+        java.net.http.HttpResponse<String> soapResponse = httpClient.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+
+        System.out.println("\n========== RISPOSTA SOAP ==========");
+        System.out.println("Status: " + soapResponse.statusCode());
+        System.out.println(soapResponse.body());
+        System.out.println("===================================\n");
+
+        @SuppressWarnings("unchecked")
+        Uni<Boolean> uni = (Uni<Boolean>) sendFlussoMethod.invoke(service, config, flow);
+
+        UniAssertSubscriber<Boolean> subscriber = uni.subscribe().withSubscriber(UniAssertSubscriber.create());
+        subscriber.awaitItem(java.time.Duration.ofSeconds(35)).assertCompleted();
+        Boolean result = subscriber.getItem();
+
+        System.out.println("Test OK UAT completato. Esito: " + result);
+        assertTrue(soapResponse.body().contains("<esito>OK</esito>"), "La risposta SOAP non contiene esito OK");
+    }
+
 
     // ========== Helper methods ==========
 
