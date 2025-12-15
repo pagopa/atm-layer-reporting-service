@@ -66,6 +66,28 @@ class CbillAbiFederazioneServiceImplTest {
     }
 
     @Test
+    void findByAbi_shouldFail_whenAbiIsNull() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.findByAbi(null).subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "ABI is required");
+        Mockito.verifyNoInteractions(repository);
+    }
+
+    @Test
+    void findByAbi_shouldFail_whenAbiExceedsMaximumLength() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.findByAbi("123456").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "ABI exceeds 5 characters");
+        Mockito.verifyNoInteractions(repository);
+    }
+
+    @Test
     void findByAbi_shouldFail_whenAbiIsInvalid() {
         CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(Mockito.mock(CbillAbiFederazioneRepository.class));
 
@@ -144,6 +166,19 @@ class CbillAbiFederazioneServiceImplTest {
         UniAssertSubscriber<CbillAbiFederazione> subscriber = service.getPspConfiguration("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertFailedWith(failure.getClass(), "repo fail");
+        Mockito.verify(repository).findByAbi("12345");
+    }
+
+    @Test
+    void getPspConfiguration_shouldWrapPersistenceException_whenRepositoryFails() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+        PersistenceException persistenceException = new PersistenceException("db error");
+        Mockito.when(repository.findByAbi("12345")).thenReturn(Uni.createFrom().failure(persistenceException));
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.getPspConfiguration("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "Unable to fetch PSP configuration");
         Mockito.verify(repository).findByAbi("12345");
     }
 
