@@ -589,7 +589,7 @@
   },
   "info" : {
     "title" : "atmlayerreportingservice (DEV)",
-    "version" : "1.0.0-dev.4",
+    "version" : "1.0.0-dev.6",
     "description" : "API per consultazione, aggiornamento e rendicontazione dei pagamenti PagoPA",
     "termsOfService" : "https://www.pagopa.gov.it/",
     "contact" : {
