@@ -7,11 +7,15 @@ import it.gov.pagopa.atmlayerreportingservice.service.model.service.CbillAbiFede
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -23,6 +27,7 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 @Path("/cbill-abi-federazione")
 @Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "CbillAbiFederazione", description = "Operazioni sulla federazione ABI CBILL")
 public class CbillAbiFederazioneResource {
 
@@ -52,17 +57,49 @@ public class CbillAbiFederazioneResource {
     @APIResponse(responseCode = "200", description = "Operazione eseguita con successo", content = @Content(schema = @Schema(implementation = CbillAbiFederazioneDto.class)))
     @APIResponse(responseCode = "400", description = "Richiesta non valida", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     @APIResponse(responseCode = "404", description = "Risorsa non trovata", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
-    public Uni<CbillAbiFederazioneDto> getCbillAbiFederazioneByAbi(@PathParam("abi") String abi) {
+    @APIResponse(responseCode = "500", description = "Errore interno", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    public Uni<Response> getCbillAbiFederazioneByAbi(@PathParam("abi") String abi) {
         LOG.info("Received request to get CbillAbiFederazione by ABI: " + abi);
         return service.findByAbi(abi)
                 .map(mapper::toDto)
-                .onItem().invoke(result -> {
-                    if (result != null) {
-                        LOG.info("Successfully retrieved CbillAbiFederazione for ABI: " + abi);
-                    } else {
-                        LOG.warn("No CbillAbiFederazione found for ABI: " + abi);
+                .map(dto -> Response.ok(dto).build())
+                .onFailure(IllegalArgumentException.class).recoverWithItem(ex -> {
+                    ErrorResponseDto error = new ErrorResponseDto();
+                    error.message = ex.getMessage();
+                    String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
+                    if (message.contains("not found")) {
+                        return Response.status(Response.Status.NOT_FOUND).entity(error).build();
                     }
+                    return Response.status(Response.Status.BAD_REQUEST).entity(error).build();
                 })
-                .onFailure().invoke(ex -> LOG.error("Error occurred while fetching CbillAbiFederazione for ABI: " + abi + ": " + ex.getMessage()));
+                .onFailure().recoverWithItem(ex -> {
+                    ErrorResponseDto error = new ErrorResponseDto();
+                    error.message = "Internal server error";
+                    LOG.error("Error occurred while fetching CbillAbiFederazione for ABI: " + abi + ": " + ex.getMessage());
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(error).build();
+                });
+    }
+
+    @POST
+    @Operation(operationId = "createCbillAbiFederazione", summary = "Creazione di una federazione ABI CBILL")
+    @APIResponse(responseCode = "200", description = "Federazione ABI CBILL persistita", content = @Content(schema = @Schema(implementation = CbillAbiFederazioneDto.class)))
+    @APIResponse(responseCode = "400", description = "Richiesta non valida", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    @APIResponse(responseCode = "500", description = "Errore interno", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    public Uni<Response> createCbillAbiFederazione(@Valid CbillAbiFederazioneDto dto) {
+        LOG.info("Received request to create a new CbillAbiFederazione");
+        return service.create(mapper.toEntity(dto))
+                .map(mapper::toDto)
+                .map(created -> Response.ok(created).build())
+                .onFailure(IllegalArgumentException.class).recoverWithItem(ex -> {
+                    ErrorResponseDto error = new ErrorResponseDto();
+                    error.message = ex.getMessage();
+                    return Response.status(Response.Status.BAD_REQUEST).entity(error).build();
+                })
+                .onFailure().recoverWithItem(ex -> {
+                    ErrorResponseDto error = new ErrorResponseDto();
+                    error.message = "Internal server error";
+                    LOG.error("Error occurred while creating CbillAbiFederazione: " + ex.getMessage());
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(error).build();
+                });
     }
 }

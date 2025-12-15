@@ -10,4 +10,6 @@ public interface CbillAbiFederazioneService {
     Uni<CbillAbiFederazione> findByAbi(String abi);
 
     Uni<CbillAbiFederazione> getPspConfiguration(String abi);
+
+    Uni<CbillAbiFederazione> create(CbillAbiFederazione entity);
 }

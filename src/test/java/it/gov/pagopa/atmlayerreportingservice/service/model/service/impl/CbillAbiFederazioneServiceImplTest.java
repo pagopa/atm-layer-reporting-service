@@ -6,6 +6,7 @@ import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.CbillAbiFederazione;
 import it.gov.pagopa.atmlayerreportingservice.service.model.repository.CbillAbiFederazioneRepository;
 import java.util.List;
+import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -43,12 +44,12 @@ class CbillAbiFederazioneServiceImplTest {
         CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
         CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
         CbillAbiFederazione entity = new CbillAbiFederazione();
-        Mockito.when(repository.findById("12345")).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(repository.findByAbi("12345")).thenReturn(Uni.createFrom().item(entity));
 
         UniAssertSubscriber<CbillAbiFederazione> subscriber = service.findByAbi("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertCompleted().assertItem(entity);
-        Mockito.verify(repository).findById("12345");
+        Mockito.verify(repository).findByAbi("12345");
     }
 
     @Test
@@ -56,12 +57,45 @@ class CbillAbiFederazioneServiceImplTest {
         CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
         CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
         RuntimeException failure = new RuntimeException("find error");
-        Mockito.when(repository.findById("12345")).thenReturn(Uni.createFrom().failure(failure));
+        Mockito.when(repository.findByAbi("12345")).thenReturn(Uni.createFrom().failure(failure));
 
         UniAssertSubscriber<CbillAbiFederazione> subscriber = service.findByAbi("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertFailedWith(failure.getClass(), "find error");
-        Mockito.verify(repository).findById("12345");
+        Mockito.verify(repository).findByAbi("12345");
+    }
+
+    @Test
+    void findByAbi_shouldFail_whenAbiIsInvalid() {
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(Mockito.mock(CbillAbiFederazioneRepository.class));
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.findByAbi(" ").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "ABI is required");
+    }
+
+    @Test
+    void findByAbi_shouldFail_whenNotFound() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+        Mockito.when(repository.findByAbi("12345")).thenReturn(Uni.createFrom().nullItem());
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.findByAbi("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "ABI not found");
+        Mockito.verify(repository).findByAbi("12345");
+    }
+
+    @Test
+    void findByAbi_shouldFail_whenRepositoryEmitsPersistenceException() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+        Mockito.when(repository.findByAbi("12345")).thenReturn(Uni.createFrom().failure(new PersistenceException("db error")));
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.findByAbi("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "Unable to fetch ABI");
+        Mockito.verify(repository).findByAbi("12345");
     }
 
     @Test
@@ -89,6 +123,18 @@ class CbillAbiFederazioneServiceImplTest {
     }
 
     @Test
+    void getPspConfiguration_shouldFail_whenNotFound() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+        Mockito.when(repository.findByAbi("12345")).thenReturn(Uni.createFrom().nullItem());
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.getPspConfiguration("12345").subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "PSP configuration not found for ABI 12345");
+        Mockito.verify(repository).findByAbi("12345");
+    }
+
+    @Test
     void getPspConfiguration_shouldFail_whenRepositoryEmitsFailure() {
         CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
         CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
@@ -99,5 +145,51 @@ class CbillAbiFederazioneServiceImplTest {
 
         subscriber.assertFailedWith(failure.getClass(), "repo fail");
         Mockito.verify(repository).findByAbi("12345");
+    }
+
+    @Test
+    void create_shouldReturnEntity_whenRepositorySucceeds() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+        CbillAbiFederazione entity = buildEntity();
+        Mockito.when(repository.persist(entity)).thenReturn(Uni.createFrom().item(entity));
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.create(entity).subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(entity);
+        Mockito.verify(repository).persist(entity);
+    }
+
+    @Test
+    void create_shouldFail_whenValidationFails() {
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(Mockito.mock(CbillAbiFederazioneRepository.class));
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.create(null).subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "Request body is required");
+    }
+
+    @Test
+    void create_shouldFail_whenRepositoryEmitsPersistenceException() {
+        CbillAbiFederazioneRepository repository = Mockito.mock(CbillAbiFederazioneRepository.class);
+        CbillAbiFederazioneServiceImpl service = new CbillAbiFederazioneServiceImpl(repository);
+        CbillAbiFederazione entity = buildEntity();
+        Mockito.when(repository.persist(entity)).thenReturn(Uni.createFrom().failure(new PersistenceException("db error")));
+
+        UniAssertSubscriber<CbillAbiFederazione> subscriber = service.create(entity).subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(IllegalArgumentException.class, "Invalid CbillAbiFederazione data");
+        Mockito.verify(repository).persist(entity);
+    }
+
+    private CbillAbiFederazione buildEntity() {
+        CbillAbiFederazione entity = new CbillAbiFederazione();
+        entity.abi = "12345";
+        entity.pagopaId = "pagopa-id";
+        entity.pspFiscalCode = "12345678901";
+        entity.pspChannel = "12345";
+        entity.password = "password";
+        entity.pagopaDirect = Boolean.TRUE;
+        return entity;
     }
 }

@@ -4,10 +4,13 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import it.gov.pagopa.atmlayerreportingservice.service.model.dto.CbillAbiFederazioneDto;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.ErrorResponseDto;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.CbillAbiFederazione;
 import it.gov.pagopa.atmlayerreportingservice.service.model.mapper.CbillAbiFederazioneMapper;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.CbillAbiFederazioneService;
 import java.util.List;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -64,40 +67,123 @@ class CbillAbiFederazioneResourceTest {
         Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().item(entity));
         Mockito.when(mapper.toDto(entity)).thenReturn(dto);
 
-        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
+        UniAssertSubscriber<Response> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertCompleted().assertItem(dto);
+        Response response = subscriber.assertCompleted().getItem();
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Assertions.assertEquals(dto, response.getEntity());
         Mockito.verify(service).findByAbi(abi);
         Mockito.verify(mapper).toDto(entity);
     }
 
     @Test
-    void getCbillAbiFederazioneByAbi_shouldReturnNull_whenMapperReturnsNull() {
-        String abi = "67890";
-        CbillAbiFederazione entity = new CbillAbiFederazione();
-        Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().item(entity));
-        Mockito.when(mapper.toDto(entity)).thenReturn(null);
-
-        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
-                .subscribe().withSubscriber(UniAssertSubscriber.create());
-
-        subscriber.assertCompleted().assertItem(null);
-        Mockito.verify(service).findByAbi(abi);
-        Mockito.verify(mapper).toDto(entity);
-    }
-
-    @Test
-    void getCbillAbiFederazioneByAbi_shouldPropagateFailure_whenServiceFails() {
-        String abi = "99999";
-        RuntimeException failure = new RuntimeException("find by abi failed");
+    void getCbillAbiFederazioneByAbi_shouldReturnBadRequest_whenServiceValidationFails() {
+        String abi = " ";
+        IllegalArgumentException failure = new IllegalArgumentException("ABI is required");
         Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().failure(failure));
 
-        UniAssertSubscriber<CbillAbiFederazioneDto> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
+        UniAssertSubscriber<Response> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertFailedWith(RuntimeException.class, "find by abi failed");
+        Response response = subscriber.assertCompleted().getItem();
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        ErrorResponseDto error = (ErrorResponseDto) response.getEntity();
+        Assertions.assertEquals("ABI is required", error.message);
         Mockito.verify(service).findByAbi(abi);
         Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void getCbillAbiFederazioneByAbi_shouldReturnNotFound_whenServiceSignalsMissingEntity() {
+        String abi = "99999";
+        IllegalArgumentException failure = new IllegalArgumentException("ABI not found");
+        Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        ErrorResponseDto error = (ErrorResponseDto) response.getEntity();
+        Assertions.assertEquals("ABI not found", error.message);
+        Mockito.verify(service).findByAbi(abi);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void getCbillAbiFederazioneByAbi_shouldReturnServerError_whenServiceFailsUnexpectedly() {
+        String abi = "12345";
+        RuntimeException failure = new RuntimeException("unexpected");
+        Mockito.when(service.findByAbi(abi)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.getCbillAbiFederazioneByAbi(abi)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Assertions.assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        ErrorResponseDto error = (ErrorResponseDto) response.getEntity();
+        Assertions.assertEquals("Internal server error", error.message);
+        Mockito.verify(service).findByAbi(abi);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void createCbillAbiFederazione_shouldReturnDto_whenServiceSucceeds() {
+        CbillAbiFederazioneDto dto = new CbillAbiFederazioneDto();
+        CbillAbiFederazione entity = new CbillAbiFederazione();
+        Mockito.when(service.create(entity)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(mapper.toEntity(dto)).thenReturn(entity);
+        Mockito.when(mapper.toDto(entity)).thenReturn(dto);
+
+        UniAssertSubscriber<Response> subscriber = resource.createCbillAbiFederazione(dto)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Assertions.assertEquals(dto, response.getEntity());
+        Mockito.verify(service).create(entity);
+        Mockito.verify(mapper).toEntity(dto);
+        Mockito.verify(mapper).toDto(entity);
+    }
+
+    @Test
+    void createCbillAbiFederazione_shouldReturnBadRequest_whenServiceFailsValidation() {
+        CbillAbiFederazioneDto dto = new CbillAbiFederazioneDto();
+        CbillAbiFederazione entity = new CbillAbiFederazione();
+        IllegalArgumentException failure = new IllegalArgumentException("invalid data");
+        Mockito.when(mapper.toEntity(dto)).thenReturn(entity);
+        Mockito.when(service.create(entity)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.createCbillAbiFederazione(dto)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        ErrorResponseDto error = (ErrorResponseDto) response.getEntity();
+        Assertions.assertEquals("invalid data", error.message);
+        Mockito.verify(service).create(entity);
+        Mockito.verify(mapper).toEntity(dto);
+        Mockito.verify(mapper, Mockito.never()).toDto(Mockito.any());
+    }
+
+    @Test
+    void createCbillAbiFederazione_shouldReturnServerError_whenServiceFailsUnexpectedly() {
+        CbillAbiFederazioneDto dto = new CbillAbiFederazioneDto();
+        CbillAbiFederazione entity = new CbillAbiFederazione();
+        RuntimeException failure = new RuntimeException("unexpected");
+        Mockito.when(mapper.toEntity(dto)).thenReturn(entity);
+        Mockito.when(service.create(entity)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.createCbillAbiFederazione(dto)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Assertions.assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        ErrorResponseDto error = (ErrorResponseDto) response.getEntity();
+        Assertions.assertEquals("Internal server error", error.message);
+        Mockito.verify(service).create(entity);
+        Mockito.verify(mapper).toEntity(dto);
+        Mockito.verify(mapper, Mockito.never()).toDto(Mockito.any());
     }
 }
