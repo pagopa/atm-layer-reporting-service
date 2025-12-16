@@ -3,10 +3,6 @@
 -- This file is automatically executed by Flyway during test database initialization
 -- Location: src/test/resources/db/migration/V90__test_data_rendicontazione.sql
 
-ALTER TABLE atm_layer_reporting_schema.cbill_abi_federazione
-    ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT '' NOT NULL;
-
-
 -- ===================================================================
 -- 1. Insert CBILL_ABI_FEDERAZIONE records
 -- ===================================================================
