@@ -468,6 +468,53 @@
             }
           }
         }
+      },
+      "post" : {
+        "summary" : "Creazione di una federazione ABI CBILL",
+        "operationId" : "createCbillAbiFederazione",
+        "tags" : [ "CbillAbiFederazione" ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CbillAbiFederazioneDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Federazione ABI CBILL persistita",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CbillAbiFederazioneDto"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Richiesta non valida",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Errore interno",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reporting-service/cbill-abi-federazione/{abi}" : {
@@ -506,6 +553,16 @@
           },
           "404" : {
             "description" : "Risorsa non trovata",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Errore interno",
             "content" : {
               "application/json" : {
                 "schema" : {
