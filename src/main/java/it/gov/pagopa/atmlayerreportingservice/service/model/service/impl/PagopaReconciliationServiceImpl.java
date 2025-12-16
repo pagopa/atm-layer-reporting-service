@@ -1,27 +1,27 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.service.impl;
 
-import it.gov.digitpa.schemas._2011.pagamenti.CtDatiSingoliPagamenti;
-import it.gov.digitpa.schemas._2011.pagamenti.CtFlussoRiversamento;
-import it.gov.digitpa.schemas._2011.pagamenti.CtIdentificativoUnivoco;
-import it.gov.digitpa.schemas._2011.pagamenti.CtIdentificativoUnivocoPersonaG;
-import it.gov.digitpa.schemas._2011.pagamenti.CtIstitutoMittente;
-import it.gov.digitpa.schemas._2011.pagamenti.CtIstitutoRicevente;
-import it.gov.digitpa.schemas._2011.pagamenti.StTipoIdentificativoUnivoco;
-import it.gov.digitpa.schemas._2011.pagamenti.StTipoIdentificativoUnivocoPersG;
+import io.quarkus.scheduler.Scheduled;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import it.gov.digitpa.schemas._2011.pagamenti.*;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.CbillAbiFederazione;
 import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.CbillAbiFederazioneService;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaReconciliationService;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransactionsService;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransferListService;
-import io.quarkus.scheduler.Scheduled;
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -34,24 +34,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Comparator;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class PagopaReconciliationServiceImpl implements PagopaReconciliationService {
+    private static final Logger LOG = Logger.getLogger(PagopaReconciliationServiceImpl.class);
+
     private static final DateTimeFormatter FLOW_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormatter.BASIC_ISO_DATE;
 
@@ -91,7 +80,9 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
     @Scheduled(cron = "{pagopa.rendicontazione.cron}")
     public Uni<Void> schedulePagoPaReconciliation() {
         LocalDate toDate = LocalDate.now();
-        return transactionsService.findAll()
+        // Emit on the Vert.x context to ensure Hibernate Reactive session operations run on the event loop
+        return Uni.createFrom().voidItem()
+                .flatMap(ignored -> transactionsService.findAll())
                 .onItem().transform(transactions -> {
                     if (transactions == null) {
                         return Set.<String>of();
@@ -102,8 +93,10 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
                     if (banks.isEmpty()) {
                         return Uni.createFrom().voidItem();
                     }
-                    List<Uni<Void>> tasks = banks.stream().map(bank -> processBank(bank, toDate)).toList();
-                    return Uni.combine().all().unis(tasks).combinedWith(x -> null).replaceWithVoid();
+                    return Multi.createFrom().iterable(banks)
+                            .onItem().transformToUniAndConcatenate(bank -> processBank(bank, toDate)) // <-- sequential
+                            .collect().asList()
+                            .replaceWithVoid();
                 });
     }
 
@@ -125,8 +118,10 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
                                 if (aggregated.isEmpty()) {
                                     return Uni.createFrom().voidItem();
                                 }
-                                List<Uni<Void>> flowTasks = aggregated.values().stream().map(agg -> sendAndMark(config, agg)).toList();
-                                return Uni.combine().all().unis(flowTasks).combinedWith(x -> null).replaceWithVoid();
+                                return Multi.createFrom().iterable(aggregated.values())
+                                        .onItem().transformToUniAndConcatenate(agg -> sendAndMark(config, agg)) // <-- sequential
+                                        .collect().asList()
+                                        .replaceWithVoid();
                             });
                 });
     }
@@ -222,19 +217,22 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
         return payment;
     }
 
+
     private Uni<Void> sendAndMark(CbillAbiFederazione config, FlowAggregation aggregation) {
+        LOG.debug("Sending FlussoRiconciliazione for flow " + aggregation.flow.getIdentificativoFlusso());
         return sendFlussoRiconciliazione(config, aggregation.flow)
                 .flatMap(success -> {
                     if (!Boolean.TRUE.equals(success)) {
                         return Uni.createFrom().voidItem();
                     }
-                    List<Uni<Void>> updates = aggregation.transfers.stream()
-                            .map(transfer -> transferListService.markAsReported(transfer.id))
-                            .toList();
-                    if (updates.isEmpty()) {
+                    if (aggregation.transfers == null || aggregation.transfers.isEmpty()) {
                         return Uni.createFrom().voidItem();
                     }
-                    return Uni.combine().all().unis(updates).combinedWith(x -> null).replaceWithVoid();
+
+                    return Multi.createFrom().iterable(aggregation.transfers)
+                            .onItem().transformToUniAndConcatenate(t -> transferListService.markAsReported(t.id)) // <-- sequential
+                            .collect().asList()
+                            .replaceWithVoid();
                 });
     }
 
@@ -265,7 +263,7 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
             } catch (Exception ex) {
                 return Boolean.FALSE;
             }
-        }).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+        });
     }
 
     private String marshalFlow(CtFlussoRiversamento flow) {
