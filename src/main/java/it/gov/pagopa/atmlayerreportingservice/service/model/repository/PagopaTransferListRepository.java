@@ -1,6 +1,8 @@
 package it.gov.pagopa.atmlayerreportingservice.service.model.repository;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 import io.quarkus.hibernate.reactive.panache.PanacheRepositoryBase;
@@ -27,6 +29,7 @@ public class PagopaTransferListRepository implements PanacheRepositoryBase<Pagop
     }
 
     public Uni<List<PagopaTransferList>> findPayedNotReportedToPagoPAForBank(LocalDate toDate, String senderBank) {
-        return find("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2", senderBank, toDate).list();
+        Instant toInstant = toDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        return find("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2", senderBank, toInstant).list();
     }
 }

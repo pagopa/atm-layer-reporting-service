@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 @QuarkusTest
@@ -125,14 +126,18 @@ class PagopaTransferListRepositoryTest {
         String senderBank = "BANK";
         List<PagopaTransferList> entities = List.of(new PagopaTransferList());
         PanacheQuery<PagopaTransferList> query = Mockito.mock(PanacheQuery.class);
-        Mockito.doReturn(query).when(repository).find("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2", senderBank, toDate);
+        Mockito.doReturn(query).when(repository).find(
+                ArgumentMatchers.eq("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2"),
+                ArgumentMatchers.<Object[]>any());
         Mockito.when(query.list()).thenReturn(Uni.createFrom().item(entities));
 
         UniAssertSubscriber<List<PagopaTransferList>> subscriber = repository.findPayedNotReportedToPagoPAForBank(toDate, senderBank)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertCompleted().assertItem(entities);
-        Mockito.verify(repository).find("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2", senderBank, toDate);
+        Mockito.verify(repository).find(
+                ArgumentMatchers.eq("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2"),
+                ArgumentMatchers.<Object[]>any());
         Mockito.verify(query).list();
     }
 
@@ -142,14 +147,18 @@ class PagopaTransferListRepositoryTest {
         String senderBank = "FAIL";
         RuntimeException failure = new RuntimeException("payed not reported failed");
         PanacheQuery<PagopaTransferList> query = Mockito.mock(PanacheQuery.class);
-        Mockito.doReturn(query).when(repository).find("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2", senderBank, toDate);
+        Mockito.doReturn(query).when(repository).find(
+                ArgumentMatchers.eq("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2"),
+                ArgumentMatchers.<Object[]>any());
         Mockito.when(query.list()).thenReturn(Uni.createFrom().failure(failure));
 
         UniAssertSubscriber<List<PagopaTransferList>> subscriber = repository.findPayedNotReportedToPagoPAForBank(toDate, senderBank)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
         subscriber.assertFailedWith(RuntimeException.class, "payed not reported failed");
-        Mockito.verify(repository).find("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2", senderBank, toDate);
+        Mockito.verify(repository).find(
+                ArgumentMatchers.eq("pagopaReported = false and transferCro is not null and pagopaTransaction.senderBank = ?1 and pagopaTransaction.payDate < ?2"),
+                ArgumentMatchers.<Object[]>any());
         Mockito.verify(query).list();
     }
 }
