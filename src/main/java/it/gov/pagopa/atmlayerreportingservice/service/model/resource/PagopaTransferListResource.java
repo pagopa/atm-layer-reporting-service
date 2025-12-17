@@ -46,7 +46,7 @@ public class PagopaTransferListResource {
     @APIResponse(responseCode = "400", description = "Richiesta non valida", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     public Uni<Response> listPagopaTransferLists(@HeaderParam("SenderBank") String senderBank) {
         LOG.info("Received request to list PagopaTransferLists for senderBank: " + senderBank);
-        if (senderBank == null || senderBank.isEmpty()) {
+        if (senderBank == null || senderBank.isBlank()) {
             LOG.warn("SenderBank header is missing");
             ErrorResponseDto errorResponse = new ErrorResponseDto();
             errorResponse.message = "SenderBank header is required";
