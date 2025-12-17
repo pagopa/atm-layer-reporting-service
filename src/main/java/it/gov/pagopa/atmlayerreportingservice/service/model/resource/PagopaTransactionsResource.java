@@ -8,13 +8,11 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
+
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -39,9 +37,22 @@ public class PagopaTransactionsResource {
     @Operation(operationId = "listPagopaTransactions", summary = "Lista delle transazioni PagoPA")
     @APIResponse(responseCode = "200", description = "Operazione eseguita con successo", content = @Content(schema = @Schema(implementation = PagopaTransactionsDto[].class)))
     @APIResponse(responseCode = "400", description = "Richiesta non valida", content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
-    public Uni<List<PagopaTransactionsDto>> listPagopaTransactions() {
+    public Uni<Response> listPagopaTransactions(@HeaderParam("SenderBank") String senderBank) {
         LOG.info("Received request to list all PagopaTransactions.");
-        return service.findAll().map(mapper::toDtoList);
+        if (senderBank == null || senderBank.isBlank()) {
+            LOG.warn("SenderBank header is missing");
+            ErrorResponseDto errorResponse = new ErrorResponseDto();
+            errorResponse.message = "SenderBank header is required";
+            return Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build());
+        }
+        return service.findAllBySenderBank(senderBank).map(mapper::toDtoList)
+                .map(dtos -> Response.ok(dtos).build())
+                .onFailure().recoverWithItem(throwable -> {
+                    String msg = throwable.getMessage() != null ? throwable.getMessage() : "Internal error";
+                    ErrorResponseDto errorResponse = new ErrorResponseDto();
+                    errorResponse.message = msg;
+                    return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+                });
     }
 
     @POST

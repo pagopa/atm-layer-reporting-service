@@ -8,9 +8,13 @@ import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransac
 import it.gov.pagopa.atmlayerreportingservice.service.model.mapper.PagopaTransactionsMapper;
 import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransactionsService;
 import java.util.List;
+
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 class PagopaTransactionsResourceTest {
@@ -30,29 +34,106 @@ class PagopaTransactionsResourceTest {
 
     @Test
     void listPagopaTransactions_shouldReturnMappedDtos_whenServiceReturnsEntities() {
+        String senderBank = "12345";
         List<PagopaTransactions> entities = List.of(new PagopaTransactions());
         List<PagopaTransactionsDto> dtos = List.of(new PagopaTransactionsDto());
-        Mockito.when(service.findAll()).thenReturn(Uni.createFrom().item(entities));
+        Mockito.when(service.findAllBySenderBank(senderBank)).thenReturn(Uni.createFrom().item(entities));
         Mockito.when(mapper.toDtoList(entities)).thenReturn(dtos);
 
-        UniAssertSubscriber<List<PagopaTransactionsDto>> subscriber = resource.listPagopaTransactions()
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransactions(senderBank)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertCompleted().assertItem(dtos);
-        Mockito.verify(service).findAll();
+        subscriber.assertCompleted();
+        Response response = subscriber.getItem();
+        assertEquals(response.getStatus(),Response.Status.OK.getStatusCode());
+        assertEquals(response.getEntity(), dtos);
+        Mockito.verify(service).findAllBySenderBank(senderBank);
+        Mockito.verify(mapper).toDtoList(entities);
+    }
+
+    @Test
+    void listPagopaTransactions_shouldReturnEmptyList_whenServiceReturnsNoEntities() {
+        String senderBank = "12345";
+        List<PagopaTransactions> entities = List.of();
+        List<PagopaTransactionsDto> dtos = List.of();
+        Mockito.when(service.findAllBySenderBank(senderBank)).thenReturn(Uni.createFrom().item(entities));
+        Mockito.when(mapper.toDtoList(entities)).thenReturn(dtos);
+
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransactions(senderBank)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Response response = subscriber.getItem();
+        assertEquals(response.getStatus(),Response.Status.OK.getStatusCode());
+        assertEquals(response.getEntity(), dtos);
+        Mockito.verify(service).findAllBySenderBank(senderBank);
+        Mockito.verify(mapper).toDtoList(entities);
+    }
+
+    @Test
+    void listPagopaTransactions_shouldReturnEmptyList_whenSenderBankHasNoRecords() {
+        String senderBank = "NON_EXISTENT_BANK";
+        List<PagopaTransactions> entities = List.of();
+        List<PagopaTransactionsDto> dtos = List.of();
+        Mockito.when(service.findAllBySenderBank(senderBank)).thenReturn(Uni.createFrom().item(entities));
+        Mockito.when(mapper.toDtoList(entities)).thenReturn(dtos);
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransactions(senderBank)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+        subscriber.assertCompleted();
+        Response response = subscriber.getItem();
+        assertEquals(response.getStatus(),Response.Status.OK.getStatusCode());
+        assertEquals(response.getEntity(), dtos);
+        Mockito.verify(service).findAllBySenderBank(senderBank);
         Mockito.verify(mapper).toDtoList(entities);
     }
 
     @Test
     void listPagopaTransactions_shouldPropagateFailure_whenServiceFails() {
+        String senderBank = "12345";
         RuntimeException failure = new RuntimeException("find failed");
-        Mockito.when(service.findAll()).thenReturn(Uni.createFrom().failure(failure));
+        Mockito.when(service.findAllBySenderBank(senderBank)).thenReturn(Uni.createFrom().failure(failure));
 
-        UniAssertSubscriber<List<PagopaTransactionsDto>> subscriber = resource.listPagopaTransactions()
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransactions(senderBank)
                 .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertFailedWith(RuntimeException.class, "find failed");
-        Mockito.verify(service).findAll();
+        subscriber.assertCompleted();
+        Mockito.verify(service).findAllBySenderBank(senderBank);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void listPagopaTransactions_shouldReturnBadRequest_whenSenderBankIsNull() {
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransactions(null)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Response response = subscriber.getItem();
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        Mockito.verifyNoInteractions(service);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void listPagopaTransactions_shouldReturnBadRequest_whenSenderBankIsEmpty() {
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransactions("")
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Response response = subscriber.getItem();
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        Mockito.verifyNoInteractions(service);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void listPagopaTransactions_shouldReturnBadRequest_whenSenderBankIsBlank() {
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransactions("   ")
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Response response = subscriber.getItem();
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        Mockito.verifyNoInteractions(service);
         Mockito.verifyNoInteractions(mapper);
     }
 
