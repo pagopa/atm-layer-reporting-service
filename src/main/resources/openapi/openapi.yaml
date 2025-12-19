@@ -52,31 +52,6 @@ components:
       - 2022-03-10
     PagopaTransactionsDto:
       type: object
-      required:
-      - id
-      - transactionId
-      - status
-      - billAccountId
-      - billAmount
-      - senderBank
-      - payDate
-      - reported
-      - billerIban
-      - billId
-      - billerCommission
-      - bankCommission
-      - idempotencyKey
-      - billerFiscalCode
-      - noticeNumber
-      - retCode
-      - outcomeCode
-      - payDescription
-      - billerName
-      - billerOffice
-      - payToken
-      - tokenExpDt
-      - crdReferenceId
-      - atmCode
       properties:
         id:
           type: integer
@@ -154,17 +129,32 @@ components:
         atmCode:
           type: string
           maxLength: 10
+      required:
+      - transactionId
+      - status
+      - billAccountId
+      - billAmount
+      - senderBank
+      - payDate
+      - reported
+      - billerIban
+      - billId
+      - billerCommission
+      - bankCommission
+      - idempotencyKey
+      - billerFiscalCode
+      - noticeNumber
+      - retCode
+      - outcomeCode
+      - payDescription
+      - billerName
+      - billerOffice
+      - payToken
+      - tokenExpDt
+      - crdReferenceId
+      - atmCode
     PagopaTransferListDto:
       type: object
-      required:
-      - id
-      - transactionId
-      - transferId
-      - transferAmount
-      - pagopaReported
-      - paFiscalCode
-      - paIban
-      - rmtInfo
       properties:
         id:
           type: integer
@@ -199,6 +189,14 @@ components:
         rmtInfo:
           type: string
           maxLength: 140
+      required:
+      - transactionId
+      - transferId
+      - transferAmount
+      - pagopaReported
+      - paFiscalCode
+      - paIban
+      - rmtInfo
     PagopaTransferListUpdateDto:
       type: object
       required:
@@ -442,6 +440,11 @@ paths:
       operationId: listPagopaTransactions
       tags:
       - PagopaTransactions
+      parameters:
+      - name: SenderBank
+        in: header
+        schema:
+          type: string
       responses:
         "200":
           description: Operazione eseguita con successo
@@ -483,7 +486,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponseDto"
 info:
   title: atmlayerreportingservice (DEV)
-  version: 1.0.0-dev.6
+  version: 1.0.0-dev.7
   description: "API per consultazione, aggiornamento e rendicontazione dei pagamenti\
     \ PagoPA"
   termsOfService: https://www.pagopa.gov.it/

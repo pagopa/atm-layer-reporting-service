@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public class PagopaTransactionsDto {
-    @NotNull
     public Long id;
 
     @NotNull

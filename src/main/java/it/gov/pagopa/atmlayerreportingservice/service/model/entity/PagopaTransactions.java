@@ -2,11 +2,8 @@ package it.gov.pagopa.atmlayerreportingservice.service.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,7 +15,7 @@ public class PagopaTransactions extends PanacheEntityBase implements Serializabl
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
     public Long id;
 
     @Column(name = "TRANSACTION_ID", length = 36, nullable = false, unique = true)
