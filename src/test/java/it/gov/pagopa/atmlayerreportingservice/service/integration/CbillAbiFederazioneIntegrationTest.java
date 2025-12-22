@@ -65,7 +65,7 @@ class CbillAbiFederazioneIntegrationTest {
                 .body("abi", equalTo(ABI_AGID_01))
                 .body("pagopaId", equalTo(PAGOPA_ID_AGID_01))
                 .body("pspFiscalCode", equalTo("97735020584"))
-                .body("pspChannel", equalTo("_03"))
+                .body("pspChannel", equalTo("03"))
                 .body("password", equalTo("password-12345"))
                 .body("pagopaDirect", equalTo(false));
     }
@@ -84,7 +84,7 @@ class CbillAbiFederazioneIntegrationTest {
                 .body("abi", equalTo(ABI_AGID_02))
                 .body("pagopaId", equalTo(PAGOPA_ID_AGID_02))
                 .body("pspFiscalCode", equalTo("97735020584"))
-                .body("pspChannel", equalTo("_05"))
+                .body("pspChannel", equalTo("05"))
                 .body("password", equalTo("password-12346"))
                 .body("pagopaDirect", equalTo(false));
     }
@@ -103,7 +103,7 @@ class CbillAbiFederazioneIntegrationTest {
                 .body("abi", equalTo(ABI_BNL))
                 .body("pagopaId", equalTo(PAGOPA_ID_BNL))
                 .body("pspFiscalCode", equalTo("05963231005"))
-                .body("pspChannel", equalTo("_03"))
+                .body("pspChannel", equalTo("03"))
                 .body("password", equalTo("password-09514"))
                 .body("pagopaDirect", equalTo(true));
     }
@@ -144,7 +144,7 @@ class CbillAbiFederazioneIntegrationTest {
                   "abi": "%s",
                   "pagopaId": "TEST01",
                   "pspFiscalCode": "12345678901",
-                  "pspChannel": "_09",
+                  "pspChannel": "09",
                   "password": "secure-password",
                   "pagopaDirect": true
                 }
@@ -162,7 +162,7 @@ class CbillAbiFederazioneIntegrationTest {
                 .body("abi", equalTo(newAbi))
                 .body("pagopaId", equalTo("TEST01"))
                 .body("pspFiscalCode", equalTo("12345678901"))
-                .body("pspChannel", equalTo("_09"))
+                .body("pspChannel", equalTo("09"))
                 .body("password", equalTo("secure-password"))
                 .body("pagopaDirect", equalTo(true));
 
@@ -174,7 +174,7 @@ class CbillAbiFederazioneIntegrationTest {
                 .statusCode(200)
                 .body("abi", equalTo(newAbi))
                 .body("pagopaId", equalTo("TEST01"))
-                .body("pspChannel", equalTo("_09"));
+                .body("pspChannel", equalTo("09"));
     }
 
     @Test
