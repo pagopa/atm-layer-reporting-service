@@ -25,8 +25,8 @@ secretProviderClass:
 
 database:
   type: postgresql
-  jdbc_url: jdbc:postgresql://pagopa-uat-atm-layer-rds.cluster-cyezwzpjc2tj.eu-south-1.rds.amazonaws.com:5431/pagopadb?currentSchema=atm_layer_reporting_schema
-  reactive_url: postgresql://pagopa-uat-atm-layer-rds.cluster-cyezwzpjc2tj.eu-south-1.rds.amazonaws.com:5431/pagopadb?currentSchema=atm_layer_reporting_schema
+  jdbc_url: jdbc:postgresql://pagopa-uat-atm-layer-rds.cluster-csdbokdg0q4t.eu-south-1.rds.amazonaws.com:5432/pagopadb?currentSchema=atm_layer_reporting_schema
+  reactive_url: postgresql://pagopa-uat-atm-layer-rds.cluster-csdbokdg0q4t.eu-south-1.rds.amazonaws.com:5432/pagopadb?currentSchema=atm_layer_reporting_schema
   db_name: pagopadb
   credentialsSecretEnabled: true
   credentialsSecretName: "pagopa-uat-atm-layer-model-database"
@@ -40,6 +40,7 @@ database:
 #   enableJDBCMonitoring: "true"
 
 reportingService:
+  pagopa_api_url: https://api.uat.platform.pagopa.it/nodo-auth/node-for-psp/v1
   credentialsSecretEnabled: true
   credentialsSecretName: "pagopa-uat-atm-layer-reporting-service-node"
   credentialsSecretKeys:

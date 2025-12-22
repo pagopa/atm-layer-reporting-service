@@ -40,6 +40,7 @@ database:
 #   enableJDBCMonitoring: "true"
 
 reportingService:
+  pagopa_api_url: https://api.uat.platform.pagopa.it/nodo-auth/node-for-psp/v1
   credentialsSecretEnabled: true
   credentialsSecretName: "pagopa-dev-atm-layer-reporting-service-node"
   credentialsSecretKeys:
