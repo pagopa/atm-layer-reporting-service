@@ -285,7 +285,7 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
         String identificativoDominio = flow.getIstitutoRicevente() != null && flow.getIstitutoRicevente().getIdentificativoUnivocoRicevente() != null ? safeString(flow.getIstitutoRicevente().getIdentificativoUnivocoRicevente().getCodiceIdentificativoUnivoco()) : "";
         String identificativoPSP = safeString(config.pagopaId);
         String identificativoIntermediarioPSP = safeString(config.pspFiscalCode);
-        String identificativoCanale = safeString(config.pspFiscalCode) + safeString(config.pspChannel);
+        String identificativoCanale = safeString(config.pspFiscalCode) + "_" + safeString(config.pspChannel);
         return "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:ws=\"http://ws.pagamenti.telematici.gov/\">" +
                 "<soapenv:Header/>" +
                 "<soapenv:Body>" +
