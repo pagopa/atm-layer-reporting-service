@@ -67,6 +67,8 @@ spec:
                   {{- end }}
             - name: REPORTING_DB_TYPE
               value: "{{ .Values.database.type }}"
+            - name: PAGOPA_API_URL
+              value: "{{ .Values.reportingService.pagopa_api_url }}"
           volumeMounts:
           {{- if .Values.secretProviderClass.enabled }}
           - name: secrets-store-inline
