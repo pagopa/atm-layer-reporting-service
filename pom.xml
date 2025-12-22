@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>it.gov.pagopa</groupId>
     <artifactId>atmlayerreportingservice</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
 
     <properties>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
