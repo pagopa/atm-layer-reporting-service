@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.pagamenti.telematici.gov/">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <ws:nodoInviaFlussoRendicontazione>
+            <identificativoPSP>88888888888</identificativoPSP>
+            <identificativoIntermediarioPSP>88888888888</identificativoIntermediarioPSP>
+            <identificativoCanale>88888888888_01</identificativoCanale>
+            <password>PEZsdXNzb1JpdmV</password>
+            <identificativoDominio>77777777777</identificativoDominio>
+            <identificativoFlusso>2025-11-2188888888888-AABB648200001</identificativoFlusso>
+            <dataOraFlusso>2021-11-21T00:37:32</dataOraFlusso>
+            <xmlRendicontazione>
+                <FlussoRiversamento xmlns="http://www.digitpa.gov.it/schemas/2011/Pagamenti/">
+                    <versioneOggetto>1.0</versioneOggetto>
+                    <identificativoFlusso>2025-11-2188888888888-AABB648200001</identificativoFlusso>
+                    <dataOraFlusso>2021-11-21T00:37:32</dataOraFlusso>
+                    <identificativoUnivocoRegolamento>Bonifico SEPA-00000-AABB0</identificativoUnivocoRegolamento>
+                    <dataRegolamento>2021-11-21</dataRegolamento>
+                    <istitutoMittente>
+                        <identificativoUnivocoMittente>
+                            <tipoIdentificativoUnivoco>B</tipoIdentificativoUnivoco>
+                            <codiceIdentificativoUnivoco>ABI00000</codiceIdentificativoUnivoco>
+                        </identificativoUnivocoMittente>
+                        <denominazioneMittente>BANCO DI XXXXXXXX SPA</denominazioneMittente>
+                    </istitutoMittente>
+                    <istitutoRicevente>
+                        <identificativoUnivocoRicevente>
+                            <tipoIdentificativoUnivoco>G</tipoIdentificativoUnivoco>
+                            <codiceIdentificativoUnivoco>77777777777</codiceIdentificativoUnivoco>
+                        </identificativoUnivocoRicevente>
+                        <denominazioneRicevente>XXXXXXXXXXX</denominazioneRicevente>
+                    </istitutoRicevente>
+                    <numeroTotalePagamenti>1</numeroTotalePagamenti>
+                    <importoTotalePagamenti>1234.56</importoTotalePagamenti>
+                    <datiSingoliPagamenti>
+                        <identificativoUnivocoVersamento>12210209926737900</identificativoUnivocoVersamento>
+                        <identificativoUnivocoRiscossione>2130101502302932577</identificativoUnivocoRiscossione>
+                        <indiceDatiSingoloPagamento>1</indiceDatiSingoloPagamento>
+                        <singoloImportoPagato>1234.56</singoloImportoPagato>
+                        <codiceEsitoSingoloPagamento>0</codiceEsitoSingoloPagamento>
+                        <dataEsitoSingoloPagamento>2021-11-21</dataEsitoSingoloPagamento>
+                    </datiSingoliPagamenti>
+                </FlussoRiversamento>
+            </xmlRendicontazione>
+        </ws:nodoInviaFlussoRendicontazione>
+    </soapenv:Body>
+</soapenv:Envelope>

@@ -1,0 +1,2 @@
+create sequence atm_layer_reporting_schema.PAGOPA_TRANSACTIONS_SEQ start with 1;
+create sequence atm_layer_reporting_schema.PAGOPA_TRANSFER_LIST_SEQ start with 1;

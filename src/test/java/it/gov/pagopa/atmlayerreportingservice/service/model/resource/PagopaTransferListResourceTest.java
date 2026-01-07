@@ -1,0 +1,208 @@
+package it.gov.pagopa.atmlayerreportingservice.service.model.resource;
+
+import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.ErrorResponseDto;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListDto;
+import it.gov.pagopa.atmlayerreportingservice.service.model.dto.PagopaTransferListUpdateDto;
+import it.gov.pagopa.atmlayerreportingservice.service.model.entity.PagopaTransferList;
+import it.gov.pagopa.atmlayerreportingservice.service.model.mapper.PagopaTransferListMapper;
+import it.gov.pagopa.atmlayerreportingservice.service.model.service.PagopaTransferListService;
+import java.util.List;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+@QuarkusTest
+class PagopaTransferListResourceTest {
+
+    PagopaTransferListService service;
+    PagopaTransferListMapper mapper;
+    PagopaTransferListResource resource;
+
+    @BeforeEach
+    void setUp() {
+        service = Mockito.mock(PagopaTransferListService.class);
+        mapper = Mockito.mock(PagopaTransferListMapper.class);
+        resource = new PagopaTransferListResource();
+        resource.service = service;
+        resource.mapper = mapper;
+    }
+
+    @Test
+    void listPagopaTransferLists_shouldReturnMappedDtos_whenServiceReturnsEntities() {
+        String senderBank = "12345";
+        List<PagopaTransferList> entities = List.of(new PagopaTransferList());
+        List<PagopaTransferListDto> dtos = List.of(new PagopaTransferListDto());
+        Mockito.when(service.findBySenderBank(senderBank)).thenReturn(Uni.createFrom().item(entities));
+        Mockito.when(mapper.toDtoList(entities)).thenReturn(dtos);
+
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransferLists(senderBank)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Mockito.verify(service).findBySenderBank(senderBank);
+        Mockito.verify(mapper).toDtoList(entities);
+    }
+
+    @Test
+    void listPagopaTransferLists_shouldPropagateFailure_whenServiceFails() {
+        String senderBank = "12345";
+        RuntimeException failure = new RuntimeException("failure");
+        Mockito.when(service.findBySenderBank(senderBank)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransferLists(senderBank)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Mockito.verify(service).findBySenderBank(senderBank);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void listPagopaTransferLists_shouldReturnFailure_whenSenderBankIsNull() {
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransferLists(null)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Mockito.verifyNoInteractions(service);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void listPagopaTransferLists_shouldReturnFailure_whenSenderBankIsEmpty() {
+        UniAssertSubscriber<Response> subscriber = resource.listPagopaTransferLists("")
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted();
+        Mockito.verifyNoInteractions(service);
+        Mockito.verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void createPagopaTransferList_shouldReturnDto_whenPersistSucceeds() {
+        PagopaTransferListDto input = new PagopaTransferListDto();
+        PagopaTransferList entity = new PagopaTransferList();
+        PagopaTransferListDto output = new PagopaTransferListDto();
+        Mockito.when(mapper.toEntity(input)).thenReturn(entity);
+        Mockito.when(service.persist(entity)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(mapper.toDto(entity)).thenReturn(output);
+
+        UniAssertSubscriber<PagopaTransferListDto> subscriber = resource.createPagopaTransferList(input)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(output);
+        Mockito.verify(mapper).toEntity(input);
+        Mockito.verify(service).persist(entity);
+        Mockito.verify(mapper).toDto(entity);
+    }
+
+    @Test
+    void createPagopaTransferList_shouldPropagateFailure_whenPersistFails() {
+        PagopaTransferListDto input = new PagopaTransferListDto();
+        PagopaTransferList entity = new PagopaTransferList();
+        RuntimeException failure = new RuntimeException("persist failed");
+        Mockito.when(mapper.toEntity(input)).thenReturn(entity);
+        Mockito.when(service.persist(entity)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<PagopaTransferListDto> subscriber = resource.createPagopaTransferList(input)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(RuntimeException.class, "persist failed");
+        Mockito.verify(mapper).toEntity(input);
+        Mockito.verify(service).persist(entity);
+        Mockito.verify(mapper, Mockito.never()).toDto(Mockito.any());
+    }
+
+    @Test
+    void updatePagopaTransferList_shouldReturnOkResponse_whenUpdateSucceeds() {
+        String senderBank = "BANK";
+        PagopaTransferListUpdateDto request = new PagopaTransferListUpdateDto();
+        request.transactionId = "123";
+        request.transferId = 2;
+        PagopaTransferList entity = new PagopaTransferList();
+        PagopaTransferListDto updatedDto = new PagopaTransferListDto();
+        Mockito.when(service.updateTransferList(senderBank, request)).thenReturn(Uni.createFrom().item(entity));
+        Mockito.when(mapper.toDto(entity)).thenReturn(updatedDto);
+
+        UniAssertSubscriber<Response> subscriber = resource.updatePagopaTransferList(senderBank, request)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Mockito.verify(service).updateTransferList(senderBank, request);
+        Mockito.verify(mapper).toDto(entity);
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Assertions.assertSame(updatedDto, response.getEntity());
+    }
+
+    @Test
+    void updatePagopaTransferList_shouldReturnNotFound_whenServiceFailsWithNotFoundMessage() {
+        String senderBank = "BANK";
+        PagopaTransferListUpdateDto request = new PagopaTransferListUpdateDto();
+        RuntimeException failure = new RuntimeException("element not found");
+        Mockito.when(service.updateTransferList(senderBank, request)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.updatePagopaTransferList(senderBank, request)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Mockito.verify(service).updateTransferList(senderBank, request);
+        Mockito.verifyNoInteractions(mapper);
+        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        Object entity = response.getEntity();
+        Assertions.assertTrue(entity instanceof ErrorResponseDto);
+        Assertions.assertEquals("element not found", ((ErrorResponseDto) entity).message);
+    }
+
+    @Test
+    void updatePagopaTransferList_shouldReturnBadRequest_whenServiceFailsWithOtherMessage() {
+        String senderBank = "BANK";
+        PagopaTransferListUpdateDto request = new PagopaTransferListUpdateDto();
+        RuntimeException failure = new RuntimeException("invalid data");
+        Mockito.when(service.updateTransferList(senderBank, request)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<Response> subscriber = resource.updatePagopaTransferList(senderBank, request)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        Response response = subscriber.assertCompleted().getItem();
+        Mockito.verify(service).updateTransferList(senderBank, request);
+        Mockito.verifyNoInteractions(mapper);
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        Object entity = response.getEntity();
+        Assertions.assertTrue(entity instanceof ErrorResponseDto);
+        Assertions.assertEquals("invalid data", ((ErrorResponseDto) entity).message);
+    }
+
+    @Test
+    void listPagopaTransferListsByTransactionId_shouldReturnMappedDtos_whenServiceReturnsEntities() {
+        Long transactionId = 123L;
+        List<PagopaTransferList> entities = List.of(new PagopaTransferList());
+        List<PagopaTransferListDto> dtos = List.of(new PagopaTransferListDto());
+        Mockito.when(service.findByTransactionId(transactionId)).thenReturn(Uni.createFrom().item(entities));
+        Mockito.when(mapper.toDtoList(entities)).thenReturn(dtos);
+
+        UniAssertSubscriber<List<PagopaTransferListDto>> subscriber = resource.listPagopaTransferListsByTransactionId(transactionId)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertCompleted().assertItem(dtos);
+        Mockito.verify(service).findByTransactionId(transactionId);
+        Mockito.verify(mapper).toDtoList(entities);
+    }
+
+    @Test
+    void listPagopaTransferListsByTransactionId_shouldPropagateFailure_whenServiceFails() {
+        Long transactionId = 456L;
+        RuntimeException failure = new RuntimeException("find failed");
+        Mockito.when(service.findByTransactionId(transactionId)).thenReturn(Uni.createFrom().failure(failure));
+
+        UniAssertSubscriber<List<PagopaTransferListDto>> subscriber = resource.listPagopaTransferListsByTransactionId(transactionId)
+                .subscribe().withSubscriber(UniAssertSubscriber.create());
+
+        subscriber.assertFailedWith(RuntimeException.class, "find failed");
+        Mockito.verify(service).findByTransactionId(transactionId);
+        Mockito.verifyNoInteractions(mapper);
+    }
+}
