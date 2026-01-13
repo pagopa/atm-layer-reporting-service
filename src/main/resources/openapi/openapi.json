@@ -216,6 +216,9 @@
           "rmtInfo" : {
             "type" : "string",
             "maxLength" : 140
+          },
+          "transaction" : {
+            "$ref" : "#/components/schemas/PagopaTransactionsDto"
           }
         },
         "required" : [ "transactionId", "transferId", "transferAmount", "pagopaReported", "paFiscalCode", "paIban", "rmtInfo" ]
@@ -653,7 +656,7 @@
   },
   "info" : {
     "title" : "atmlayerreportingservice (DEV)",
-    "version" : "1.0.0-dev.7",
+    "version" : "3.0.0-dev.1",
     "description" : "API per consultazione, aggiornamento e rendicontazione dei pagamenti PagoPA",
     "termsOfService" : "https://www.pagopa.gov.it/",
     "contact" : {

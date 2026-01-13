@@ -44,6 +44,8 @@ public class PagopaTransferListDto {
     @Size(max = 140)
     public String rmtInfo;
 
+    public PagopaTransactionsDto transaction;
+
     public PagopaTransferListDto() {
     }
 }

@@ -243,23 +243,27 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
             }
             String xml = marshalFlow(flow);
             String encodedXml = Base64.getEncoder().encodeToString(xml.getBytes(StandardCharsets.UTF_8));
+            String requestBody = buildSoapEnvelope(config, flow, encodedXml);
+            LOG.debug("Request body: " + requestBody);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(pagoPaUrl))
                     .timeout(Duration.ofMillis(pagoPaReadTimeout))
                     .header("Content-Type", "text/xml; charset=UTF-8")
                     .header("Ocp-Apim-Subscription-Key", pagoPaSubscriptionKey == null ? "" : pagoPaSubscriptionKey)
-                    .POST(HttpRequest.BodyPublishers.ofString(buildSoapEnvelope(config, flow, encodedXml)))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
             try {
                 HttpResponse<String> response = httpClient().send(request, HttpResponse.BodyHandlers.ofString());
+                LOG.debug("Response status code: " + response.statusCode());
                 if (response.statusCode() < 200 || response.statusCode() >= 300) {
                     return Boolean.FALSE;
                 }
-                String body = response.body();
-                if (body == null) {
+                String responseBody = response.body();
+                LOG.debug("Response body: " + responseBody);
+                if (responseBody == null) {
                     return Boolean.FALSE;
                 }
-                return body.contains("OK");
+                return responseBody.contains("OK");
             } catch (Exception ex) {
                 return Boolean.FALSE;
             }

@@ -17,6 +17,7 @@ public interface PagopaTransferListMapper {
     PagopaTransferList toEntity(PagopaTransferListDto dto);
 
     @Mapping(target = "transactionId", source = "pagopaTransaction.id")
+    @Mapping(target = "transaction", source = "pagopaTransaction")
     PagopaTransferListDto toDto(PagopaTransferList entity);
 
     List<PagopaTransferListDto> toDtoList(List<PagopaTransferList> entities);
