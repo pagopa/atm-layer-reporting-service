@@ -24,6 +24,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -170,6 +171,7 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
         flow.setIstitutoMittente(buildMittente(config.pagopaId));
         flow.setIstitutoRicevente(buildRicevente(transfer.paFiscalCode));
         flow.setNumeroTotalePagamenti(BigDecimal.ONE);
+        // ensure total amount uses scale 2
         flow.setImportoTotalePagamenti(safeAmount(transfer.transferAmount));
         flow.getDatiSingoliPagamenti().add(buildPayment(transfer));
         return flow;
@@ -178,7 +180,7 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
     private void updateFlow(CtFlussoRiversamento flow, PagopaTransferList transfer) {
         BigDecimal totalPayments = flow.getNumeroTotalePagamenti() == null ? BigDecimal.ZERO : flow.getNumeroTotalePagamenti();
         flow.setNumeroTotalePagamenti(totalPayments.add(BigDecimal.ONE));
-        BigDecimal totalAmount = flow.getImportoTotalePagamenti() == null ? BigDecimal.ZERO : flow.getImportoTotalePagamenti();
+        BigDecimal totalAmount = flow.getImportoTotalePagamenti() == null ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP) : flow.getImportoTotalePagamenti();
         flow.setImportoTotalePagamenti(totalAmount.add(safeAmount(transfer.transferAmount)));
         flow.getDatiSingoliPagamenti().add(buildPayment(transfer));
     }
@@ -219,7 +221,7 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
 
 
     private Uni<Void> sendAndMark(CbillAbiFederazione config, FlowAggregation aggregation) {
-        LOG.debug("Sending FlussoRiconciliazione for flow " + aggregation.flow.getIdentificativoFlusso());
+        LOG.info("Sending FlussoRiconciliazione for flow " + aggregation.flow.getIdentificativoFlusso());
         return sendFlussoRiconciliazione(config, aggregation.flow)
                 .flatMap(success -> {
                     if (!Boolean.TRUE.equals(success)) {
@@ -244,7 +246,7 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
             String xml = marshalFlow(flow);
             String encodedXml = Base64.getEncoder().encodeToString(xml.getBytes(StandardCharsets.UTF_8));
             String requestBody = buildSoapEnvelope(config, flow, encodedXml);
-            LOG.debug("Request body: " + requestBody);
+            LOG.info("Request body: " + requestBody);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(pagoPaUrl))
                     .timeout(Duration.ofMillis(pagoPaReadTimeout))
@@ -254,12 +256,12 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
                     .build();
             try {
                 HttpResponse<String> response = httpClient().send(request, HttpResponse.BodyHandlers.ofString());
-                LOG.debug("Response status code: " + response.statusCode());
+                LOG.info("Response status code: " + response.statusCode());
                 if (response.statusCode() < 200 || response.statusCode() >= 300) {
                     return Boolean.FALSE;
                 }
                 String responseBody = response.body();
-                LOG.debug("Response body: " + responseBody);
+                LOG.info("Response body: " + responseBody);
                 if (responseBody == null) {
                     return Boolean.FALSE;
                 }
@@ -330,7 +332,14 @@ public class PagopaReconciliationServiceImpl implements PagopaReconciliationServ
     }
 
     private BigDecimal safeAmount(BigDecimal amount) {
-        return amount == null ? BigDecimal.ZERO : amount;
+        // ensure amounts always have scale 2 so JAXB serializes e.g. 1.00 instead of 1.0
+        BigDecimal v = amount == null ? BigDecimal.ZERO : amount;
+        try {
+            return v.setScale(2, RoundingMode.HALF_UP);
+        } catch (ArithmeticException ex) {
+            // fallback: create a new scaled value
+            return new BigDecimal(v.toPlainString()).setScale(2, RoundingMode.HALF_UP);
+        }
     }
 
     private static final class FlowAggregation {
