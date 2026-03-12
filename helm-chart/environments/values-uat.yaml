@@ -100,7 +100,7 @@ service:
   port: 8080
 
 ingress:
-  enabled: false
+  enabled: true
   name: pagopa-uat-atm-layer-reporting-service
   className: ""
   annotations: 
