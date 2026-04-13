@@ -1,5 +1,5 @@
 ## Stage 1 : build with maven builder image with native capabilities
-FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 AS build
+FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21@sha256:e9d2f653444a7383985aa6c0a613d9716cb4a3e99bc8e0171abd7cddbe366592 AS build
 COPY --chown=quarkus:quarkus --chmod=0755 mvnw /code/mvnw
 COPY --chown=quarkus:quarkus .mvn /code/.mvn
 COPY --chown=quarkus:quarkus pom.xml /code/
@@ -12,7 +12,7 @@ ARG APP_NAME=atm-layer-reporting-service
 RUN ./mvnw package -Dnative -Dquarkus.application.name=${APP_NAME} -Dquarkus.profile=${QUARKUS_PROFILE} -DskipTests
 
 ## Stage 2 : create the docker final image
-FROM quay.io/quarkus/ubi9-quarkus-micro-image:2.0
+FROM quay.io/quarkus/ubi9-quarkus-micro-image:2.0@sha256:c0da7af9c09b8537add5f7d4764fcfc37d023e8993ac85ab89af3580b645c2bd
 WORKDIR /work/
 COPY --from=build /code/target/*-runner /work/application
 
